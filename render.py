@@ -8,11 +8,9 @@ import numpy as np
 # add lighting to the faces depending on angle to a source of light (above)
 # convert each face to an ascii image?
 # make it copy and pastable
-#
-# optimise the drawing of points (doubling on making points and edges which is inefficient)
-# make rotation a slider that can speed up and slow down
 # need to fix the colouring (probably switch to light source from the sky)
 # fix the comments
+#rotate camera (how?)
 
 
 # projects a 3d point onto a 2d surface (your screen)
@@ -20,8 +18,8 @@ def project(point):
     x = point[0]
     y = point[1]
     z = point[2]
-    px = WindowSizeX/2 + ((x*FOV)/(FOV+z)) * distance
-    py = WindowSizeY/2 + ((y*FOV)/(FOV+z)) * distance
+    px = horizontalshift/2 + ((x*FOV)/(FOV+z)) * distance
+    py = verticalshift/2 + ((y*FOV)/(FOV+z)) * distance
     return px, py
 # draws the projected 3d point onto a 2d surface
 
@@ -125,7 +123,7 @@ def drawscene():
 def rotate_all():
     global points
     # could make more efficient by matrix multiplying the rotation matrixes and then matrix multipy with transposing the points array
-    points = rotateX(rotateY(points))
+    points = rotateZ(rotateY(points))
 
 def update_speed(val):
     global angle
@@ -134,11 +132,16 @@ def update_distance(val):
     global distance,camera_pos
     distance = int(val)
     camera_pos = np.array([0, 0, FOV+distance])
-
+def update_horizontalshift(val):
+    global horizontalshift
+    horizontalshift = int(val)
+def update_verticalshift(val):
+    global verticalshift
+    verticalshift = int(val)
 # Setup Tkinter
 root = tk.Tk()
 root.title("Render Screen")
-root.geometry("700x500")
+root.geometry("800x700")
 root.configure(bg="black")
 canvas = tk.Canvas(root, width=400, height=300, bg="black")
 canvas.pack()
@@ -165,14 +168,40 @@ distance_slider = tk.Scale(
 distance_slider.set(50)  # Default distance
 distance_slider.pack()
 distance = 50
+
+horizontalshift_slider = tk.Scale(
+    root, 
+    from_=-200, 
+    to=1000, 
+    orient="horizontal", 
+    label="horizontal shift", 
+    command=update_horizontalshift,
+    length=300
+)
+horizontalshift_slider.set(400)  # Default distance
+horizontalshift_slider.pack()
+verticalshift_slider = tk.Scale(
+    root, 
+    from_=-200, 
+    to=1000, 
+    orient="horizontal", 
+    label="vertical shift",  
+    command=update_verticalshift,
+    length=300
+)
+verticalshift_slider.set(300)  # Default distance
+verticalshift_slider.pack()
+WindowSizeY = 300
+WindowSizeX = 400
+horizontalshift = WindowSizeX
+verticalshift = WindowSizeY
 # Variables and constants
 
 #do not change lower than 100 it causes graphical problems ??????????
 FOV = 100  # this is distance to the center of the screen - https://www.youtube.com/watch?v=nvWDgBGcAIM&ab_channel=GraverDev
-camera_pos = np.array([0, 0, FOV+distance])
+camera_pos = np.array([horizontalshift, verticalshift, FOV+distance])
 TIMEDELAY = 16  # for drawing the scene in milliseconds (16 ms is 60 fps)
-WindowSizeY = 300
-WindowSizeX = 400
+
 angle = np.radians(1)
 size = 2  # size of points in terms of a circles bounding box
 # preprocess_obj("cube.obj", "cube_cleaned.obj")
