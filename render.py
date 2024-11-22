@@ -5,10 +5,8 @@ import numpy as np
 # load objs instead of creating arrays
 # clean objs
 
-# add lighting to the faces depending on angle to a source of light (above)
 # convert each face to an ascii image?
 # make it copy and pastable
-# need to fix the colouring (probably switch to light source from the sky)
 # fix the comments
 #rotate camera (how?)
 
@@ -36,13 +34,21 @@ def drawedge(edge):
     px2, py2 = project(points[edge[1]])
     canvas.create_line(px1, py1, px2, py2, fill="white")
 
+def lighting_intensity(face):
+    normal = compute_normal(face)
+    face_point = points[face[0]]  # any point on the face
+    light_vector = light_pos - face_point # this is a vector from point on face to light and so in same direction as normal
+    normal = normal / np.linalg.norm(normal)
+    light_vector = light_vector / np.linalg.norm(light_vector) #normalized to ensure in range from 0 to 1
+    intensity = max(0.1,np.dot(light_vector ,normal)) #1 means lit, 0 means not lit
 
+    return intensity
 def drawface(face, j):
     facepoints = []
     for i in range(len(face)):
         px, py = project(points[face[i]])
         facepoints.append((px, py))  # creates an array of points for that face
-        colour_value = 30+j*30
+        colour_value = int(j*255)#int(255 - j*255)
         colour = f"#{colour_value:02x}{colour_value:02x}{colour_value:02x}"  # hex convert
         canvas.create_polygon(facepoints, fill=colour, outline=colour) #further away = lighter, closest = dark
 
@@ -52,14 +58,14 @@ def compute_normal(face):
     edge1 = p2 - p1
     edge2 = p3 - p1
     normal = np.cross(edge1, edge2)  # Cross product
-    return normal / np.linalg.norm(normal)  # Normalize to length of 1
+    return -(normal / np.linalg.norm(normal))  # Normalize to length of 1 and invert (cw direction)
 
 
 def is_face_visible(face):
     normal = compute_normal(face)
     face_point = points[face[0]]  # any point on the face
-    view_vector = camera_pos - face_point
-    return np.dot(view_vector, normal) < 0  # true if the face is visible
+    view_vector = camera_pos - face_point #from face point to camera pos
+    return np.dot(view_vector, normal) > 0  # true if the face is visible
 
 
 def sort_faces_by_distance(faces):
@@ -113,8 +119,8 @@ def drawscene():
     i = 0
     for face in sorted_faces:
         if is_face_visible(face):
+            i = lighting_intensity(face)
             drawface(face, i)
-            i += 1
     rotate_all()
 
     root.after(TIMEDELAY, drawscene)
@@ -123,7 +129,8 @@ def drawscene():
 def rotate_all():
     global points
     # could make more efficient by matrix multiplying the rotation matrixes and then matrix multipy with transposing the points array
-    points = rotateZ(rotateY(points))
+    #points = rotateZ(rotateY(points))
+    points = rotateY(points)
 
 def update_speed(val):
     global angle
@@ -206,21 +213,21 @@ angle = np.radians(1)
 size = 2  # size of points in terms of a circles bounding box
 # preprocess_obj("cube.obj", "cube_cleaned.obj")
 
-
+light_pos = np.array([0,10,0]) #placed above in y direction
 def load_shape(shape):
     shapes = {
         "cube": (
             np.array([[-0.5, -0.5, -0.5], [0.5, -0.5, -0.5], [0.5, 0.5, -0.5], [-0.5, 0.5, -0.5],
                       [-0.5, -0.5, 0.5], [0.5, -0.5, 0.5], [0.5, 0.5, 0.5], [-0.5, 0.5, 0.5]]),
             [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [5, 6], [6, 7], [7, 4], [0, 4], [1, 5], [2, 6], [3, 7]],
-            [[3, 2, 1, 0], [4, 5, 6, 7], [0, 4, 7, 3], [2, 6, 5, 1], [7, 6, 2, 3], [0, 1, 5, 4]]
+            [[3, 2, 1, 0], [4, 5, 6, 7], [0, 4, 7, 3], [2, 6, 5, 1], [7, 6, 2, 3], [0, 1, 5, 4]] #clockwise face points direction!!!
         ),
         "pyramid": (
             np.array([[-0.5, -0.5, 0], [0.5, -0.5, 0], [0.5, 0.5, 0], [-0.5, 0.5, 0], [0, 0, 1]]),
             [[0, 1], [1, 2], [2, 3], [3, 0], [0, 4], [1, 4], [2, 4], [3, 4]],
-            [[0, 1, 2, 3], [0, 1, 4], [1, 2, 4], [2, 3, 4], [3, 0, 4]]
+            [[0, 1, 2, 3], [0, 1, 4], [1, 2, 4], [2, 3, 4], [3, 0, 4]] #clockwise face points direction!!!
         ),
-        "tetrahedron": ( #BROKEN!!!!!!!! need to fix the faces 
+        "tetrahedron": ( #BROKEN!!!!!!!! need to fix the faces in cw direction
             np.array([[0, 0, 0], [1, 0, 0], [0.5, np.sqrt(3)/2, 0], [0.5, np.sqrt(3)/6, np.sqrt(2/3)]]),
             [[0, 1], [1, 2], [2, 0], [0, 3], [1, 3], [2, 3]],
             [[0, 1, 2], [0, 1, 3], [1, 2, 3], [2, 0, 3]]
