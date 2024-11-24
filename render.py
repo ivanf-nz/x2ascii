@@ -1,17 +1,14 @@
 import tkinter as tk
 import numpy as np
+from PIL import Image, ImageGrab,ImageOps
 # TODO:
+
 # load objs instead of creating arrays
 # clean objs
 
-# convert each face to an ascii image
-    #make a grid that you print to
-    #figure out where the faces lie in the grid - rasterization? 
-    #use intensity function to print the related ascii character
-    #  
-# make it copy and pastable
+# make it copy and pastable kinda already done but could be improved (button outputs a ascii file)
 # fix the comments - use the triple quotes """statement about function, paramters/inputs:, returns: """
-#rotate camera (how?)
+#rotate camera - not the cube (how?)
 
 
 # projects a 3d point onto a 2d surface (your screen)
@@ -28,11 +25,11 @@ def drawpoint(px, py):
     canvas.create_oval(px - size, py - size, px + size, py + size, fill="white", outline="white")
 
 # draws the projected 3d edge onto a 2d surface
-def drawedge(edge):
-    # edge has the point number ex (1,5) there is an edge between points 1 and 5
-    px1, py1 = project(points[edge[0]])
-    px2, py2 = project(points[edge[1]])
-    canvas.create_line(px1, py1, px2, py2, fill="white")
+def drawedge(start,end):
+    # start is the start point and end is the end point
+    px1, py1 = project(start)
+    px2, py2 = project(end)
+    canvas.create_line(px1, py1, px2, py2, fill="black",width=size)
 
 def lighting_intensity(face):
     normal = compute_normal(face)
@@ -40,7 +37,7 @@ def lighting_intensity(face):
     light_vector = light_pos - face_point # this is a vector from point on face to light and so in same direction as normal
     normal = normal / np.linalg.norm(normal)
     light_vector = light_vector / np.linalg.norm(light_vector) #normalized to ensure in range from 0 to 1
-    intensity = max(0.1,np.dot(light_vector ,normal)) #1 means lit, 0 means not lit
+    intensity = 1-max(0.3,np.dot(light_vector ,normal)) #changed with 1- and to 0.3 to have black bg for ascii #1 means lit, 0 means not lit
 
     return intensity
 def drawface(face, j):
@@ -51,7 +48,9 @@ def drawface(face, j):
         colour_value = int(j*255)#int(255 - j*255)
         colour = f"#{colour_value:02x}{colour_value:02x}{colour_value:02x}"  # hex convert
         canvas.create_polygon(facepoints, fill=colour, outline=colour) #further away = lighter, closest = dark
-
+    for i in range(len(face)-1): #draws the edges
+        drawedge(points[face[i]],points[face[i + 1]])
+    drawedge(points[face[0]],points[face[(len(face)-1)]]) #loops back from the end point to the start point - if not here will have missing edges
 
 def compute_normal(face):
     p1, p2, p3 = points[face[0]], points[face[1]], points[face[2]]
@@ -60,13 +59,11 @@ def compute_normal(face):
     normal = np.cross(edge1, edge2)  # Cross product
     return -(normal / np.linalg.norm(normal))  # Normalize to length of 1 and invert (cw direction)
 
-
 def is_face_visible(face):
     normal = compute_normal(face)
     face_point = points[face[0]]  # any point on the face
     view_vector = camera_pos - face_point #from face point to camera pos
     return np.dot(view_vector, normal) > 0  # true if the face is visible
-
 
 def sort_faces_by_distance(faces):
     centroids = [np.mean(points[face], axis=0) for face in faces]
@@ -74,7 +71,6 @@ def sort_faces_by_distance(faces):
     sorted_faces = sorted(zip(faces, distances),key=lambda x: x[1], reverse=True)
     # sorted from furthest to closest
     return [face for face, _ in sorted_faces]
-
 
 def rotateY(points):
     y_rotation_matrix = np.array([
@@ -85,7 +81,6 @@ def rotateY(points):
     points = points @ y_rotation_matrix.T
     return points
 
-
 def rotateX(points):
     x_rotation_matrix = np.array([
         [np.cos(angle), 0, np.sin(angle)],
@@ -93,7 +88,6 @@ def rotateX(points):
         [-np.sin(angle), 0, np.cos(angle)]])
     points = points @ x_rotation_matrix.T
     return points
-
 
 def rotateZ(points):
     z_rotation_matrix = np.array([
@@ -103,7 +97,51 @@ def rotateZ(points):
     points = points @ z_rotation_matrix.T
     return points
 
+def get_canvas_img():
 
+    xmonitor = canvas.winfo_rootx()
+    ymonitor = canvas.winfo_rooty()
+    canvaswidth = canvas.winfo_width()
+    canvasheight = canvas.winfo_height()
+    windowwidth = root.winfo_width()
+    windowheight = root.winfo_height()
+ 
+    bbox = (xmonitor+(windowwidth-canvaswidth)/2, ymonitor+28, xmonitor+(windowwidth-canvaswidth)/2+canvaswidth, ymonitor + canvasheight+28)
+
+    image = ImageGrab.grab(bbox) #broken and i dont know why
+    return image
+    #print(f"Pixel value at ({x}, {y}): {pixel_value}")
+def print_ascii(im, new_width):
+    width, height = im.size
+    new_height = int(height/width * new_width *0.5)
+    im = im.resize((new_width, new_height))
+    
+    #convert to grayscale
+    im = ImageOps.grayscale(im)
+
+
+    #ascii define white to black
+    ascii_chars = "@%#*+=-:. "
+    ascii_string = ""
+    #opens the text file - to be added later
+    #f = open("outputascii.txt","w")
+
+    #goes thorugh each pixel
+    for i in range(new_height):
+        
+        for j in range(new_width):
+
+            #gets pixel value
+            pixel = im.getpixel((j,i))
+
+            #make each pixel an ascii char 0(black)-255(white)
+            #f.write(ascii_chars[int(pixel/255*(len(ascii_chars)-1))]) 
+            ascii_string += str(ascii_chars[int(pixel/255*(len(ascii_chars)-1))]) #combine this with the line above
+        #f.write("\n")
+        ascii_string += "\n" #combine this with the line above
+    print(f"\r{ascii_string}",end="",flush=True) #ensure clean output using Carriage Return 
+
+    #print("Outputted ascii text file")
 def drawscene():
     global points
     canvas.delete("all")
@@ -115,14 +153,20 @@ def drawscene():
     #     drawedge(edge)
     # for face in faces:
     #     drawface(face)
-    sorted_faces = sort_faces_by_distance(faces)
+    sorted_faces = faces#sort_faces_by_distance(faces)
     i = 0
     for face in sorted_faces:
         if is_face_visible(face):
             i = lighting_intensity(face)
             drawface(face, i)
+    
     rotate_all()
-
+    image = get_canvas_img()
+    try:
+        print_ascii(image,70)
+    except Exception as e:
+        print(f"An error occurred: {e}")
+    
     root.after(TIMEDELAY, drawscene)
 
 
@@ -151,9 +195,9 @@ def update_verticalshift(val):
 # Setup Tkinter
 root = tk.Tk()
 root.title("Render Screen")
-root.geometry("800x700")
+root.geometry("800x700") #width x height
 root.configure(bg="black")
-canvas = tk.Canvas(root, width=400, height=300, bg="black")
+canvas = tk.Canvas(root, width=400, height=300, bg="white")  
 canvas.pack()
 speed_slider = tk.Scale(
     root, 
