@@ -1,13 +1,16 @@
 import tkinter as tk
 import numpy as np
-
 # TODO:
 # load objs instead of creating arrays
 # clean objs
 
-# convert each face to an ascii image?
+# convert each face to an ascii image
+    #make a grid that you print to
+    #figure out where the faces lie in the grid - rasterization? 
+    #use intensity function to print the related ascii character
+    #  
 # make it copy and pastable
-# fix the comments
+# fix the comments - use the triple quotes """statement about function, paramters/inputs:, returns: """
 #rotate camera (how?)
 
 
@@ -19,15 +22,12 @@ def project(point):
     px = horizontalshift/2 + ((x*FOV)/(FOV+z)) * distance
     py = verticalshift/2 + ((y*FOV)/(FOV+z)) * distance
     return px, py
+
 # draws the projected 3d point onto a 2d surface
-
-
 def drawpoint(px, py):
     canvas.create_oval(px - size, py - size, px + size, py + size, fill="white", outline="white")
 
 # draws the projected 3d edge onto a 2d surface
-
-
 def drawedge(edge):
     # edge has the point number ex (1,5) there is an edge between points 1 and 5
     px1, py1 = project(points[edge[0]])
@@ -130,7 +130,7 @@ def rotate_all():
     global points
     # could make more efficient by matrix multiplying the rotation matrixes and then matrix multipy with transposing the points array
     #points = rotateZ(rotateY(points))
-    points = rotateY(points)
+    points = rotateX(rotateY(points))
 
 def update_speed(val):
     global angle
@@ -143,8 +143,11 @@ def update_horizontalshift(val):
     global horizontalshift
     horizontalshift = int(val)
 def update_verticalshift(val):
+
     global verticalshift
     verticalshift = int(val)
+
+
 # Setup Tkinter
 root = tk.Tk()
 root.title("Render Screen")
@@ -225,7 +228,7 @@ def load_shape(shape):
         "pyramid": (
             np.array([[-0.5, -0.5, 0], [0.5, -0.5, 0], [0.5, 0.5, 0], [-0.5, 0.5, 0], [0, 0, 1]]),
             [[0, 1], [1, 2], [2, 3], [3, 0], [0, 4], [1, 4], [2, 4], [3, 4]],
-            [[0, 1, 2, 3], [0, 1, 4], [1, 2, 4], [2, 3, 4], [3, 0, 4]] #clockwise face points direction!!!
+            [[0, 1, 2, 3], [0, 1, 4], [1, 2, 4], [2, 3, 4], [3, 0, 4]] #BROKEN!!! need to fix faces in cw direction
         ),
         "tetrahedron": ( #BROKEN!!!!!!!! need to fix the faces in cw direction
             np.array([[0, 0, 0], [1, 0, 0], [0.5, np.sqrt(3)/2, 0], [0.5, np.sqrt(3)/6, np.sqrt(2/3)]]),
