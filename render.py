@@ -1,15 +1,26 @@
 import tkinter as tk
 import numpy as np
 from PIL import Image, ImageGrab,ImageOps
+
+#######################################################################
+#                                                                     #
+#                   3D MODEL ASCII VIEWER                             #
+#                                                                     #
+# X positive is defined as going to the right                         #
+# Y positive is defiend as up and down                                #
+# Z positive is defined as going towards the viewer, out of the screen#
+#######################################################################
+
 # TODO:
 
 # load objs instead of creating arrays
 # clean objs
 
 # make it copy and pastable kinda already done but could be improved (button outputs a ascii file)
-# fix the comments - use the triple quotes """statement about function, paramters/inputs:, returns: """
+# improve the comments
 #rotate camera - not the cube (how?)
 
+#######################################################################
 
 # projects a 3d point onto a 2d surface (your screen)
 def project(point):
@@ -20,58 +31,55 @@ def project(point):
     py = verticalshift/2 + ((y*FOV)/(FOV+z)) * distance
     return px, py
 
-# draws the projected 3d point onto a 2d surface
-def drawpoint(px, py):
-    canvas.create_oval(px - size, py - size, px + size, py + size, fill="white", outline="white")
-
 # draws the projected 3d edge onto a 2d surface
 def drawedge(start,end):
-    # start is the start point and end is the end point
     px1, py1 = project(start)
     px2, py2 = project(end)
     canvas.create_line(px1, py1, px2, py2, fill="black",width=size)
 
+# determines the lighting intensity of a face compared to the light position (assuming light is pointing at object at all times)
+# returns a value from 0 to 1 where 0 means lit and 1 means unlight (because of how white = nothing printing in ascii and so 0 = black)
 def lighting_intensity(face):
     normal = compute_normal(face)
     face_point = points[face[0]]  # any point on the face
     light_vector = light_pos - face_point # this is a vector from point on face to light and so in same direction as normal
-    normal = normal / np.linalg.norm(normal)
+    normal = normal / np.linalg.norm(normal) # normalize to length of 1
     light_vector = light_vector / np.linalg.norm(light_vector) #normalized to ensure in range from 0 to 1
-    intensity = 1-max(0.3,np.dot(light_vector ,normal)) #changed with 1- and to 0.3 to have black bg for ascii #1 means lit, 0 means not lit
 
+    #dot product means that 1 = same direction, 0 = 90 degrees to each other and -1 is opposite direction
+    intensity = 1-max(0.3,np.dot(light_vector ,normal)) #changed with 1- (1 minus) to have black bg for ascii 
+    #intensity = max(0.1,np.dot(light_vector ,normal)) 1 means lit, 0 means not lit
     return intensity
-def drawface(face, j):
+
+#draws the faces with light values included
+# black = lit, white = unlit 
+def drawface(face, intensity):
     facepoints = []
     for i in range(len(face)):
         px, py = project(points[face[i]])
         facepoints.append((px, py))  # creates an array of points for that face
-        colour_value = int(j*255)#int(255 - j*255)
+        colour_value = int(intensity*255) #255 = white, 0 = black
         colour = f"#{colour_value:02x}{colour_value:02x}{colour_value:02x}"  # hex convert
-        canvas.create_polygon(facepoints, fill=colour, outline=colour) #further away = lighter, closest = dark
+        canvas.create_polygon(facepoints, fill=colour, outline=colour)
     for i in range(len(face)-1): #draws the edges
         drawedge(points[face[i]],points[face[i + 1]])
     drawedge(points[face[0]],points[face[(len(face)-1)]]) #loops back from the end point to the start point - if not here will have missing edges
 
+# computes the normal of a face. used in determining if a face is visible and used in lighting calculations
 def compute_normal(face):
     p1, p2, p3 = points[face[0]], points[face[1]], points[face[2]]
     edge1 = p2 - p1
     edge2 = p3 - p1
-    normal = np.cross(edge1, edge2)  # Cross product
-    return -(normal / np.linalg.norm(normal))  # Normalize to length of 1 and invert (cw direction)
+    normal = np.cross(edge1, edge2)  # cross product
+    return - (normal / np.linalg.norm(normal))  # Normalize to length of 1 and invert with negative sign (ccw->cw direction)
 
 def is_face_visible(face):
     normal = compute_normal(face)
     face_point = points[face[0]]  # any point on the face
-    view_vector = camera_pos - face_point #from face point to camera pos
+    view_vector = camera_pos - face_point # from face point to camera pos
     return np.dot(view_vector, normal) > 0  # true if the face is visible
 
-def sort_faces_by_distance(faces):
-    centroids = [np.mean(points[face], axis=0) for face in faces]
-    distances = [np.linalg.norm(camera_pos - centroid) for centroid in centroids]
-    sorted_faces = sorted(zip(faces, distances),key=lambda x: x[1], reverse=True)
-    # sorted from furthest to closest
-    return [face for face, _ in sorted_faces]
-
+#rotates the whole array by the given angle and using matrix multiplication
 def rotateY(points):
     y_rotation_matrix = np.array([
         [1, 0, 0],
@@ -97,6 +105,8 @@ def rotateZ(points):
     points = points @ z_rotation_matrix.T
     return points
 
+#NEED TO BE FIXED
+#gets a image of the canvas containing the model and returns the image
 def get_canvas_img():
 
     xmonitor = canvas.winfo_rootx()
@@ -104,7 +114,7 @@ def get_canvas_img():
     canvaswidth = canvas.winfo_width()
     canvasheight = canvas.winfo_height()
     windowwidth = root.winfo_width()
-    windowheight = root.winfo_height()
+    windowheight = root.winfo_height() #should be set as constants
  
     bbox = (xmonitor+(windowwidth-canvaswidth)/2, ymonitor+28, xmonitor+(windowwidth-canvaswidth)/2+canvaswidth, ymonitor + canvasheight+28)
 
@@ -135,47 +145,37 @@ def print_ascii(im, new_width):
             pixel = im.getpixel((j,i))
 
             #make each pixel an ascii char 0(black)-255(white)
-            #f.write(ascii_chars[int(pixel/255*(len(ascii_chars)-1))]) 
-            ascii_string += str(ascii_chars[int(pixel/255*(len(ascii_chars)-1))]) #combine this with the line above
-        #f.write("\n")
+            ascii_string += str(ascii_chars[int(pixel/255*(len(ascii_chars)-1))]) 
+
         ascii_string += "\n" #combine this with the line above
     print(f"\r{ascii_string}",end="",flush=True) #ensure clean output using Carriage Return 
 
     #print("Outputted ascii text file")
 def drawscene():
     global points
-    canvas.delete("all")
-    # for point in points:
-    #     px, py = project(point)
-    #     drawpoint(px,py)
-
-    # for edge in edges:
-    #     drawedge(edge)
-    # for face in faces:
-    #     drawface(face)
-    sorted_faces = faces#sort_faces_by_distance(faces)
-    i = 0
-    for face in sorted_faces:
+    canvas.delete("all") # some artifcating stuff occuring at one of the corners not sure how to remove
+    for face in faces:
         if is_face_visible(face):
-            i = lighting_intensity(face)
-            drawface(face, i)
+            intensity = lighting_intensity(face)
+            drawface(face, intensity)
     
     rotate_all()
     image = get_canvas_img()
-    try:
+    try: #printing to screen hasnt been fixed and can cause errors as the canvas is being created
         print_ascii(image,70)
     except Exception as e:
         print(f"An error occurred: {e}")
     
+    # call the same function to repeatedly draw the scene
     root.after(TIMEDELAY, drawscene)
 
-
+#rotates the scene 
 def rotate_all():
     global points
     # could make more efficient by matrix multiplying the rotation matrixes and then matrix multipy with transposing the points array
-    #points = rotateZ(rotateY(points))
-    points = rotateX(rotateY(points))
+    points = rotateZ(rotateY(points))
 
+# functions for changing the slider values 
 def update_speed(val):
     global angle
     angle = np.radians(float(val))
@@ -192,13 +192,28 @@ def update_verticalshift(val):
     verticalshift = int(val)
 
 
-# Setup Tkinter
+
+# setup Tkinter
 root = tk.Tk()
 root.title("Render Screen")
 root.geometry("800x700") #width x height
 root.configure(bg="black")
-canvas = tk.Canvas(root, width=400, height=300, bg="white")  
+
+# setup canvas size for rendering object
+WindowSizeY = 300
+WindowSizeX = 400
+canvas = tk.Canvas(root, width=WindowSizeX, height=WindowSizeY, bg="white")  
 canvas.pack()
+
+#default values for sliders
+
+angle = np.radians(1)
+print(np.degrees(angle))
+distance = 50
+horizontalshift = WindowSizeX
+verticalshift = WindowSizeY 
+
+# setup sliders
 speed_slider = tk.Scale(
     root, 
     from_=0, 
@@ -208,7 +223,7 @@ speed_slider = tk.Scale(
     command=update_speed,
     length=300
 )
-speed_slider.set(1)  # Default rotation speed
+speed_slider.set(np.degrees(angle))  # default rotation speed
 speed_slider.pack()
 distance_slider = tk.Scale(
     root, 
@@ -219,10 +234,8 @@ distance_slider = tk.Scale(
     command=update_distance,
     length=300
 )
-distance_slider.set(50)  # Default distance
+distance_slider.set(distance)  # default distance
 distance_slider.pack()
-distance = 50
-
 horizontalshift_slider = tk.Scale(
     root, 
     from_=-200, 
@@ -232,7 +245,7 @@ horizontalshift_slider = tk.Scale(
     command=update_horizontalshift,
     length=300
 )
-horizontalshift_slider.set(400)  # Default distance
+horizontalshift_slider.set(horizontalshift)  # Default x value
 horizontalshift_slider.pack()
 verticalshift_slider = tk.Scale(
     root, 
@@ -243,24 +256,21 @@ verticalshift_slider = tk.Scale(
     command=update_verticalshift,
     length=300
 )
-verticalshift_slider.set(300)  # Default distance
+verticalshift_slider.set(verticalshift)  # Default y value
 verticalshift_slider.pack()
-WindowSizeY = 300
-WindowSizeX = 400
-horizontalshift = WindowSizeX
-verticalshift = WindowSizeY
+
 # Variables and constants
 
-#do not change lower than 100 it causes graphical problems ??????????
+#fov lower than 100 used to cause problems rendering ?
 FOV = 100  # this is distance to the center of the screen - https://www.youtube.com/watch?v=nvWDgBGcAIM&ab_channel=GraverDev
 camera_pos = np.array([horizontalshift, verticalshift, FOV+distance])
 TIMEDELAY = 16  # for drawing the scene in milliseconds (16 ms is 60 fps)
-
-angle = np.radians(1)
-size = 2  # size of points in terms of a circles bounding box
+size = 2  # size of edges
 # preprocess_obj("cube.obj", "cube_cleaned.obj")
 
 light_pos = np.array([0,10,0]) #placed above in y direction
+
+#default shape loader (some are broken)
 def load_shape(shape):
     shapes = {
         "cube": (
@@ -272,12 +282,12 @@ def load_shape(shape):
         "pyramid": (
             np.array([[-0.5, -0.5, 0], [0.5, -0.5, 0], [0.5, 0.5, 0], [-0.5, 0.5, 0], [0, 0, 1]]),
             [[0, 1], [1, 2], [2, 3], [3, 0], [0, 4], [1, 4], [2, 4], [3, 4]],
-            [[0, 1, 2, 3], [0, 1, 4], [1, 2, 4], [2, 3, 4], [3, 0, 4]] #BROKEN!!! need to fix faces in cw direction
+            [[3, 2, 1, 0], [0, 1, 4], [1, 2, 4], [2, 3, 4], [3, 0, 4]] #clockwise face points direction!!!
         ),
-        "tetrahedron": ( #BROKEN!!!!!!!! need to fix the faces in cw direction
-            np.array([[0, 0, 0], [1, 0, 0], [0.5, np.sqrt(3)/2, 0], [0.5, np.sqrt(3)/6, np.sqrt(2/3)]]),
+        "tetrahedron": ( #faces work but lighting is working in the opposite of how it's meant to be ?
+            np.array([[0, 0, 0], [1, 0, 0], [0.5, np.sqrt(3)/2, 0], [0.5, np.sqrt(3)/6, np.sqrt(2/3)]]) -0.5,
             [[0, 1], [1, 2], [2, 0], [0, 3], [1, 3], [2, 3]],
-            [[0, 1, 2], [0, 1, 3], [1, 2, 3], [2, 0, 3]]
+            [[2, 1, 0], [3, 1, 0], [3, 2, 1], [3, 0, 2]]
         )
     }
     return shapes.get(shape.lower()) or ValueError(f"Shape '{shape}' is not defined.")
