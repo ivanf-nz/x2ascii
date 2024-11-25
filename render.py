@@ -1,7 +1,7 @@
 import tkinter as tk
 import numpy as np
 from PIL import Image, ImageGrab,ImageOps
-
+from obj_cleaning import get_obj, clean_line
 #######################################################################
 #                                                                     #
 #                   3D MODEL ASCII VIEWER                             #
@@ -15,6 +15,13 @@ from PIL import Image, ImageGrab,ImageOps
 
 # load objs instead of creating arrays
 # clean objs
+
+#make options for loading objs, moving them by 0.5 or 1 (points array)
+#option for disabling black outline between edges
+
+#rotation to add a input of degree
+
+#make the grid a 2d array instead of taking screen shots
 
 # make it copy and pastable kinda already done but could be improved (button outputs a ascii file)
 # improve the comments
@@ -61,9 +68,9 @@ def drawface(face, intensity):
         colour_value = int(intensity*255) #255 = white, 0 = black
         colour = f"#{colour_value:02x}{colour_value:02x}{colour_value:02x}"  # hex convert
         canvas.create_polygon(facepoints, fill=colour, outline=colour)
-    for i in range(len(face)-1): #draws the edges
-        drawedge(points[face[i]],points[face[i + 1]])
-    drawedge(points[face[0]],points[face[(len(face)-1)]]) #loops back from the end point to the start point - if not here will have missing edges
+    #for i in range(len(face)-1): #draws the edges
+        #drawedge(points[face[i]],points[face[i + 1]])
+    #drawedge(points[face[0]],points[face[(len(face)-1)]]) #loops back from the end point to the start point - if not here will have missing edges
 
 # computes the normal of a face. used in determining if a face is visible and used in lighting calculations
 def compute_normal(face):
@@ -173,7 +180,7 @@ def drawscene():
 def rotate_all():
     global points
     # could make more efficient by matrix multiplying the rotation matrixes and then matrix multipy with transposing the points array
-    points = rotateZ(rotateY(points))
+    points = rotateX(points)
 
 # functions for changing the slider values 
 def update_speed(val):
@@ -190,8 +197,6 @@ def update_verticalshift(val):
 
     global verticalshift
     verticalshift = int(val)
-
-
 
 # setup Tkinter
 root = tk.Tk()
@@ -293,9 +298,13 @@ def load_shape(shape):
     return shapes.get(shape.lower()) or ValueError(f"Shape '{shape}' is not defined.")
 
 
-shape_name = "cube"
-points, edges, faces = load_shape(shape_name)
+# shape_name = "cube"
+# points, edges, faces = load_shape(shape_name)
 
+obj = "fox.obj" #https://www.a1k0n.net/2011/07/20/donut-math.html website might help with lighting
+points, faces = get_obj(obj)
+for i in range(180):
+    points = rotateZ(points)
 drawscene()
 
 root.mainloop()
