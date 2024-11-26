@@ -54,7 +54,7 @@ def lighting_intensity(face):
     light_vector = light_vector / np.linalg.norm(light_vector) #normalized to ensure in range from 0 to 1
 
     #dot product means that 1 = same direction, 0 = 90 degrees to each other and -1 is opposite direction
-    intensity = 1-max(0.3,np.dot(light_vector ,normal)) #changed with 1- (1 minus) to have black bg for ascii 
+    intensity = 1-max(0.1,np.dot(light_vector ,normal)) #changed with 1- (1 minus) to have black bg for ascii 
     #intensity = max(0.1,np.dot(light_vector ,normal)) 1 means lit, 0 means not lit
     return intensity
 
@@ -158,10 +158,18 @@ def print_ascii(im, new_width):
     print(f"\r{ascii_string}",end="",flush=True) #ensure clean output using Carriage Return 
 
     #print("Outputted ascii text file")
+
+def sort_faces_by_distance(faces):
+    centroids = [np.mean(points[face], axis=0) for face in faces]
+    distances = [np.linalg.norm(camera_pos - centroid) for centroid in centroids]
+    sorted_faces = sorted(zip(faces, distances),key=lambda x: x[1],) #put reverse=True for really trippy ghost effect
+    # sorted from furthest to closest
+    return [face for face, _ in sorted_faces]
 def drawscene():
     global points
     canvas.delete("all") # some artifcating stuff occuring at one of the corners not sure how to remove
-    for face in faces:
+    sorted_faces = sort_faces_by_distance(faces)
+    for face in sorted_faces:
         if is_face_visible(face):
             intensity = lighting_intensity(face)
             drawface(face, intensity)
@@ -273,7 +281,7 @@ TIMEDELAY = 16  # for drawing the scene in milliseconds (16 ms is 60 fps)
 size = 2  # size of edges
 # preprocess_obj("cube.obj", "cube_cleaned.obj")
 
-light_pos = np.array([0,10,0]) #placed above in y direction
+light_pos = np.array([0,10,10]) #placed above in y direction and behind camera
 
 #default shape loader (some are broken)
 def load_shape(shape):
