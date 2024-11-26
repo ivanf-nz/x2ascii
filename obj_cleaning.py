@@ -31,4 +31,3 @@ def clean_line(line, funct):
 obj = "cube.obj"
 
 points, faces = get_obj(obj)
-print(points, faces)
