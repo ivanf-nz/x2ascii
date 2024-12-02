@@ -7,7 +7,7 @@ import cv2
 #                   3D MODEL ASCII VIEWER                             #
 #                                                                     #
 # X positive is defined as going to the right                         #
-# Y positive is defiend as up and down                                #
+# Y positive is defined as up and down                                #
 # Z positive is defined as going towards the viewer, out of the screen#
 #######################################################################
 
@@ -36,11 +36,6 @@ def project(point):
     py = verticalshift/2 + ((y*FOV)/(FOV+z)) * distance
     return px, py
 
-# draws the projected 3d edge onto a 2d surface
-def drawedge(start,end):
-    px1, py1 = project(start)
-    px2, py2 = project(end)
-    canvas.create_line(px1, py1, px2, py2, fill="black",width=size)
 
 # determines the lighting intensity of a face compared to the light position (assuming light is pointing at object at all times)
 # returns a value from 0 to 1 where 0 means lit and 1 means unlight (because of how white = nothing printing in ascii and so 0 = black)
