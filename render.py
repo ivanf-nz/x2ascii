@@ -2,7 +2,7 @@ import tkinter as tk
 import numpy as np
 from PIL import Image, ImageGrab,ImageOps
 from obj_cleaning import get_obj
-from matplotlib.path import Path
+import cv2
 #######################################################################
 #                                                                     #
 #                   3D MODEL ASCII VIEWER                             #
@@ -13,16 +13,19 @@ from matplotlib.path import Path
 #######################################################################
 
 # TODO:
+#remove the gui(tkinter) and instead have options
+#remove the useage of PIL
+#  
 #make options for loading objs, moving them by 0.5 or 1 (points array)
 #option for disabling black outline between edges
 
 #rotation to add a input of degree
 
-#make the grid a 2d array instead of taking screen shots
-
 # make it copy and pastable kinda already done but could be improved (button outputs a ascii file)
 # improve the comments
 #rotate camera - not the cube (how?)
+
+
 
 #######################################################################
 
@@ -57,14 +60,19 @@ def lighting_intensity(face):
 
 #draws the faces with light values included
 # black = lit, white = unlit 
+
 def drawface(face, intensity):
+    global grid
+
     facepoints = []
     for i in range(len(face)):
         px, py = project(points[face[i]])
         facepoints.append((px, py))  # creates an array of points for that face
-        colour_value = int(intensity*255) #255 = white, 0 = black
-        colour = f"#{colour_value:02x}{colour_value:02x}{colour_value:02x}"  # hex convert
-        canvas.create_polygon(facepoints, fill=colour, outline=colour)
+        #colour = f"#{colour_value:02x}{colour_value:02x}{colour_value:02x}"  # hex convert
+    colour_value = int(intensity*255) #255 = white, 0 = black # indention was wrong here and so was making a polygon each time the loop ran, making extra polygons and causing artifacting issue
+    facepoints = np.array(facepoints, dtype=np.int32)
+    cv2.fillPoly(grid, [facepoints], color=colour_value)
+        #canvas.create_polygon(facepoints, fill=colour, outline=colour)
     #for i in range(len(face)-1): #draws the edges
         #drawedge(points[face[i]],points[face[i + 1]])
     #drawedge(points[face[0]],points[face[(len(face)-1)]]) #loops back from the end point to the start point - if not here will have missing edges
@@ -108,31 +116,6 @@ def rotateZ(points):
         [0, 0, 1]])
     points = points @ z_rotation_matrix.T
     return points
-
-def rasterize():
-    global grid
-    grid = np.full((400, 300), ' ', dtype=str)
-
-    sorted_faces = sort_faces_by_distance(faces)
-    for face in sorted_faces:
-        if is_face_visible(face):
-            intensity = lighting_intensity(face)
-            rasterize_face(convert_to_vertices_array(face), intensity)
-            print(convert_to_vertices_array(face))
-    string_with_newlines = "\n".join("".join(row) for row in grid)
-    print(f"\r{string_with_newlines}",end="",flush=True)
-    
-def convert_to_vertices_array(face):
-    return np.array([project(points[i]) for i in face])
-def rasterize_face(points, intensity):
-    global grid
-    path = Path(points)
-    for i in range(grid.shape[0]):
-        for j in range(grid.shape[1]):
-
-            point = (j,i)
-            if path.contains_point(point):
-                grid[i, j] = str(ascii_chars[int(intensity*(len(ascii_chars)-1))])
 
 #NEED TO BE FIXED
 #gets a image of the canvas containing the model and returns the image
@@ -188,16 +171,17 @@ def sort_faces_by_distance(faces):
     # sorted from furthest to closest
     return [face for face, _ in sorted_faces]
 def drawscene():
-    global points
+    global points,grid
     canvas.delete("all") # some artifcating stuff occuring at one of the corners not sure how to remove
+    grid = np.full((WindowSizeX,WindowSizeY),255, dtype=np.uint8)#255 to set background to white
     sorted_faces = sort_faces_by_distance(faces)
     for face in sorted_faces:
         if is_face_visible(face):
             intensity = lighting_intensity(face)
             drawface(face, intensity)
-    #rasterize()
+    
     rotate_all()
-    image = get_canvas_img()
+    image = Image.fromarray(grid)
     try: #printing to screen hasnt been fixed and can cause errors as the canvas is being created
         print_ascii(image,70)
     except Exception as e:
@@ -205,6 +189,7 @@ def drawscene():
     
     # call the same function to repeatedly draw the scene
     root.after(TIMEDELAY, drawscene)
+
 
 #rotates the scene 
 def rotate_all():
@@ -228,9 +213,7 @@ def update_verticalshift(val):
     global verticalshift
     verticalshift = int(val)
 
-#rasterize settings
-grid = np.zeros((400,300))
-ascii_chars = "@%#*+=-:. "
+
 
 # setup Tkinter
 root = tk.Tk()
@@ -243,7 +226,9 @@ WindowSizeY = 300
 WindowSizeX = 400
 canvas = tk.Canvas(root, width=WindowSizeX, height=WindowSizeY, bg="white")  
 canvas.pack()
-
+#rasterize settings
+grid = np.full((WindowSizeX,WindowSizeY),255, dtype=np.uint8) #(height,width)
+ascii_chars = "@%#*+=-:. "
 #default values for sliders
 
 angle = np.radians(1)
