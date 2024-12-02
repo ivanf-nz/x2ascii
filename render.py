@@ -1,7 +1,8 @@
 import tkinter as tk
 import numpy as np
 from PIL import Image, ImageGrab,ImageOps
-from obj_cleaning import get_obj, clean_line
+from obj_cleaning import get_obj
+from matplotlib.path import Path
 #######################################################################
 #                                                                     #
 #                   3D MODEL ASCII VIEWER                             #
@@ -12,10 +13,6 @@ from obj_cleaning import get_obj, clean_line
 #######################################################################
 
 # TODO:
-
-# load objs instead of creating arrays
-# clean objs
-
 #make options for loading objs, moving them by 0.5 or 1 (points array)
 #option for disabling black outline between edges
 
@@ -112,6 +109,31 @@ def rotateZ(points):
     points = points @ z_rotation_matrix.T
     return points
 
+def rasterize():
+    global grid
+    grid = np.full((400, 300), ' ', dtype=str)
+
+    sorted_faces = sort_faces_by_distance(faces)
+    for face in sorted_faces:
+        if is_face_visible(face):
+            intensity = lighting_intensity(face)
+            rasterize_face(convert_to_vertices_array(face), intensity)
+            print(convert_to_vertices_array(face))
+    string_with_newlines = "\n".join("".join(row) for row in grid)
+    print(f"\r{string_with_newlines}",end="",flush=True)
+    
+def convert_to_vertices_array(face):
+    return np.array([project(points[i]) for i in face])
+def rasterize_face(points, intensity):
+    global grid
+    path = Path(points)
+    for i in range(grid.shape[0]):
+        for j in range(grid.shape[1]):
+
+            point = (j,i)
+            if path.contains_point(point):
+                grid[i, j] = str(ascii_chars[int(intensity*(len(ascii_chars)-1))])
+
 #NEED TO BE FIXED
 #gets a image of the canvas containing the model and returns the image
 def get_canvas_img():
@@ -173,7 +195,7 @@ def drawscene():
         if is_face_visible(face):
             intensity = lighting_intensity(face)
             drawface(face, intensity)
-    
+    #rasterize()
     rotate_all()
     image = get_canvas_img()
     try: #printing to screen hasnt been fixed and can cause errors as the canvas is being created
@@ -188,7 +210,7 @@ def drawscene():
 def rotate_all():
     global points
     # could make more efficient by matrix multiplying the rotation matrixes and then matrix multipy with transposing the points array
-    points = rotateX(points)
+    points = rotateZ(rotateX(points))
 
 # functions for changing the slider values 
 def update_speed(val):
@@ -205,6 +227,10 @@ def update_verticalshift(val):
 
     global verticalshift
     verticalshift = int(val)
+
+#rasterize settings
+grid = np.zeros((400,300))
+ascii_chars = "@%#*+=-:. "
 
 # setup Tkinter
 root = tk.Tk()
@@ -281,7 +307,7 @@ TIMEDELAY = 16  # for drawing the scene in milliseconds (16 ms is 60 fps)
 size = 2  # size of edges
 # preprocess_obj("cube.obj", "cube_cleaned.obj")
 
-light_pos = np.array([0,10,10]) #placed above in y direction and behind camera
+light_pos = np.array([0,10,0]) #placed above in y direction and behind camera
 
 #default shape loader (some are broken)
 def load_shape(shape):
@@ -306,8 +332,8 @@ def load_shape(shape):
     return shapes.get(shape.lower()) or ValueError(f"Shape '{shape}' is not defined.")
 
 
-# shape_name = "cube"
-# points, edges, faces = load_shape(shape_name)
+#shape_name = "cube"
+#points, edges, faces = load_shape(shape_name)
 
 obj = "fox.obj" #https://www.a1k0n.net/2011/07/20/donut-math.html website might help with lighting
 points, faces = get_obj(obj)
