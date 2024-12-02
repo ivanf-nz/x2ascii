@@ -1,6 +1,5 @@
 import tkinter as tk
 import numpy as np
-from PIL import Image, ImageGrab,ImageOps
 from obj_cleaning import get_obj
 import cv2
 #######################################################################
@@ -14,7 +13,6 @@ import cv2
 
 # TODO:
 #remove the gui(tkinter) and instead have options
-#remove the useage of PIL
 #  
 #make options for loading objs, moving them by 0.5 or 1 (points array)
 #option for disabling black outline between edges
@@ -68,11 +66,12 @@ def drawface(face, intensity):
     for i in range(len(face)):
         px, py = project(points[face[i]])
         facepoints.append((px, py))  # creates an array of points for that face
-        #colour = f"#{colour_value:02x}{colour_value:02x}{colour_value:02x}"  # hex convert
-    colour_value = int(intensity*255) #255 = white, 0 = black # indention was wrong here and so was making a polygon each time the loop ran, making extra polygons and causing artifacting issue
+        
+    colour_value = int(intensity*255) #255 = white, 0 = black 
     facepoints = np.array(facepoints, dtype=np.int32)
     cv2.fillPoly(grid, [facepoints], color=colour_value)
-        #canvas.create_polygon(facepoints, fill=colour, outline=colour)
+
+    #need to add option for drawing edges
     #for i in range(len(face)-1): #draws the edges
         #drawedge(points[face[i]],points[face[i + 1]])
     #drawedge(points[face[0]],points[face[(len(face)-1)]]) #loops back from the end point to the start point - if not here will have missing edges
@@ -117,33 +116,12 @@ def rotateZ(points):
     points = points @ z_rotation_matrix.T
     return points
 
-#NEED TO BE FIXED
-#gets a image of the canvas containing the model and returns the image
-def get_canvas_img():
-
-    xmonitor = canvas.winfo_rootx()
-    ymonitor = canvas.winfo_rooty()
-    canvaswidth = canvas.winfo_width()
-    canvasheight = canvas.winfo_height()
-    windowwidth = root.winfo_width()
-    windowheight = root.winfo_height() #should be set as constants
- 
-    bbox = (xmonitor+(windowwidth-canvaswidth)/2, ymonitor+28, xmonitor+(windowwidth-canvaswidth)/2+canvaswidth, ymonitor + canvasheight+28)
-
-    image = ImageGrab.grab(bbox) #broken and i dont know why
-    return image
-    #print(f"Pixel value at ({x}, {y}): {pixel_value}")
 def print_ascii(im, new_width):
-    width, height = im.size
+    width, height = WindowSizeX, WindowSizeY
     new_height = int(height/width * new_width *0.5)
-    im = im.resize((new_width, new_height))
+    im = cv2.resize(im,(new_width, new_height))
     
-    #convert to grayscale
-    im = ImageOps.grayscale(im)
-
-
     #ascii define white to black
-    ascii_chars = "@%#*+=-:. "
     ascii_string = ""
     #opens the text file - to be added later
     #f = open("outputascii.txt","w")
@@ -154,15 +132,13 @@ def print_ascii(im, new_width):
         for j in range(new_width):
 
             #gets pixel value
-            pixel = im.getpixel((j,i))
+            pixel = im[i,j]
 
             #make each pixel an ascii char 0(black)-255(white)
             ascii_string += str(ascii_chars[int(pixel/255*(len(ascii_chars)-1))]) 
 
         ascii_string += "\n" #combine this with the line above
     print(f"\r{ascii_string}",end="",flush=True) #ensure clean output using Carriage Return 
-
-    #print("Outputted ascii text file")
 
 def sort_faces_by_distance(faces):
     centroids = [np.mean(points[face], axis=0) for face in faces]
@@ -171,9 +147,8 @@ def sort_faces_by_distance(faces):
     # sorted from furthest to closest
     return [face for face, _ in sorted_faces]
 def drawscene():
-    global points,grid
-    canvas.delete("all") # some artifcating stuff occuring at one of the corners not sure how to remove
-    grid = np.full((WindowSizeX,WindowSizeY),255, dtype=np.uint8)#255 to set background to white
+    global grid
+    grid = np.full((WindowSizeY,WindowSizeX),255, dtype=np.uint8) #255 to set background to white
     sorted_faces = sort_faces_by_distance(faces)
     for face in sorted_faces:
         if is_face_visible(face):
@@ -181,14 +156,14 @@ def drawscene():
             drawface(face, intensity)
     
     rotate_all()
-    image = Image.fromarray(grid)
+
     try: #printing to screen hasnt been fixed and can cause errors as the canvas is being created
-        print_ascii(image,70)
+        print_ascii(grid,70)
     except Exception as e:
         print(f"An error occurred: {e}")
     
     # call the same function to repeatedly draw the scene
-    root.after(TIMEDELAY, drawscene)
+    root.after(TIMEDELAY, drawscene) #might not need this later on
 
 
 #rotates the scene 
@@ -227,12 +202,11 @@ WindowSizeX = 400
 canvas = tk.Canvas(root, width=WindowSizeX, height=WindowSizeY, bg="white")  
 canvas.pack()
 #rasterize settings
-grid = np.full((WindowSizeX,WindowSizeY),255, dtype=np.uint8) #(height,width)
+grid = np.full((WindowSizeY,WindowSizeX),255, dtype=np.uint8) #(height,width)
 ascii_chars = "@%#*+=-:. "
-#default values for sliders
 
+#default values for sliders
 angle = np.radians(1)
-print(np.degrees(angle))
 distance = 50
 horizontalshift = WindowSizeX
 verticalshift = WindowSizeY 
@@ -284,45 +258,17 @@ verticalshift_slider.set(verticalshift)  # Default y value
 verticalshift_slider.pack()
 
 # Variables and constants
-
 #fov lower than 100 used to cause problems rendering ?
 FOV = 100  # this is distance to the center of the screen - https://www.youtube.com/watch?v=nvWDgBGcAIM&ab_channel=GraverDev
 camera_pos = np.array([horizontalshift, verticalshift, FOV+distance])
 TIMEDELAY = 16  # for drawing the scene in milliseconds (16 ms is 60 fps)
 size = 2  # size of edges
-# preprocess_obj("cube.obj", "cube_cleaned.obj")
 
-light_pos = np.array([0,10,0]) #placed above in y direction and behind camera
-
-#default shape loader (some are broken)
-def load_shape(shape):
-    shapes = {
-        "cube": (
-            np.array([[-0.5, -0.5, -0.5], [0.5, -0.5, -0.5], [0.5, 0.5, -0.5], [-0.5, 0.5, -0.5],
-                      [-0.5, -0.5, 0.5], [0.5, -0.5, 0.5], [0.5, 0.5, 0.5], [-0.5, 0.5, 0.5]]),
-            [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [5, 6], [6, 7], [7, 4], [0, 4], [1, 5], [2, 6], [3, 7]],
-            [[3, 2, 1, 0], [4, 5, 6, 7], [0, 4, 7, 3], [2, 6, 5, 1], [7, 6, 2, 3], [0, 1, 5, 4]] #clockwise face points direction!!!
-        ),
-        "pyramid": (
-            np.array([[-0.5, -0.5, 0], [0.5, -0.5, 0], [0.5, 0.5, 0], [-0.5, 0.5, 0], [0, 0, 1]]),
-            [[0, 1], [1, 2], [2, 3], [3, 0], [0, 4], [1, 4], [2, 4], [3, 4]],
-            [[3, 2, 1, 0], [0, 1, 4], [1, 2, 4], [2, 3, 4], [3, 0, 4]] #clockwise face points direction!!!
-        ),
-        "tetrahedron": ( #faces work but lighting is working in the opposite of how it's meant to be ?
-            np.array([[0, 0, 0], [1, 0, 0], [0.5, np.sqrt(3)/2, 0], [0.5, np.sqrt(3)/6, np.sqrt(2/3)]]) -0.5,
-            [[0, 1], [1, 2], [2, 0], [0, 3], [1, 3], [2, 3]],
-            [[2, 1, 0], [3, 1, 0], [3, 2, 1], [3, 0, 2]]
-        )
-    }
-    return shapes.get(shape.lower()) or ValueError(f"Shape '{shape}' is not defined.")
-
-
-#shape_name = "cube"
-#points, edges, faces = load_shape(shape_name)
+light_pos = np.array([0,10,0]) #placed above in y direction (x,y,z)
 
 obj = "fox.obj" #https://www.a1k0n.net/2011/07/20/donut-math.html website might help with lighting
 points, faces = get_obj(obj)
-for i in range(180):
+for i in range(180): #added for fox as it is upside down
     points = rotateZ(points)
 drawscene()
 
