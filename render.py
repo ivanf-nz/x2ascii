@@ -187,15 +187,13 @@ def update_verticalshift(val):
 
 # setup Tkinter
 root = tk.Tk()
-root.title("Render Screen")
-root.geometry("800x700") #width x height
+root.title("Render Controls")
+root.geometry("400x300") #width x height
 root.configure(bg="black")
 
 # setup canvas size for rendering object
 WindowSizeY = 300
 WindowSizeX = 400
-canvas = tk.Canvas(root, width=WindowSizeX, height=WindowSizeY, bg="white")  
-canvas.pack()
 #rasterize settings
 grid = np.full((WindowSizeY,WindowSizeX),255, dtype=np.uint8) #(height,width)
 ascii_chars = "@%#*+=-:. "
@@ -261,7 +259,7 @@ size = 2  # size of edges
 
 light_pos = np.array([0,10,0]) #placed above in y direction (x,y,z)
 
-obj = "fox.obj" #https://www.a1k0n.net/2011/07/20/donut-math.html website might help with lighting
+obj = "cube.obj" #https://www.a1k0n.net/2011/07/20/donut-math.html website might help with lighting
 points, faces = get_obj(obj)
 for i in range(180): #added for fox as it is upside down
     points = rotateZ(points)
