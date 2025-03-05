@@ -12,7 +12,7 @@ import cv2
 #######################################################################
 
 # TODO:
-#remove the gui(tkinter) and instead have options
+#remove the gui(tkinter) and instead have options (python parameters)
 #  
 #make options for loading objs, moving them by 0.5 or 1 (points array)
 #option for disabling black outline between edges
@@ -167,29 +167,8 @@ def rotate_all():
     # could make more efficient by matrix multiplying the rotation matrixes and then matrix multipy with transposing the points array
     points = rotateZ(rotateX(points))
 
-# functions for changing the slider values 
-def update_speed(val):
-    global angle
-    angle = np.radians(float(val))
-def update_distance(val):
-    global distance,camera_pos
-    distance = int(val)
-    camera_pos = np.array([0, 0, FOV+distance])
-def update_horizontalshift(val):
-    global horizontalshift
-    horizontalshift = int(val)
-def update_verticalshift(val):
-
-    global verticalshift
-    verticalshift = int(val)
-
-
-
-# setup Tkinter
+# setup Tkinter - will be removed later
 root = tk.Tk()
-root.title("Render Controls")
-root.geometry("400x300") #width x height
-root.configure(bg="black")
 
 # setup canvas size for rendering object
 WindowSizeY = 300
@@ -203,52 +182,6 @@ angle = np.radians(1)
 distance = 50
 horizontalshift = WindowSizeX
 verticalshift = WindowSizeY 
-
-# setup sliders
-speed_slider = tk.Scale(
-    root, 
-    from_=0, 
-    to=5, 
-    orient="horizontal", 
-    label="Rotation Speed (degrees/sec)", 
-    command=update_speed,
-    length=300
-)
-speed_slider.set(np.degrees(angle))  # default rotation speed
-speed_slider.pack()
-distance_slider = tk.Scale(
-    root, 
-    from_=1, 
-    to=500, 
-    orient="horizontal", 
-    label="distance", 
-    command=update_distance,
-    length=300
-)
-distance_slider.set(distance)  # default distance
-distance_slider.pack()
-horizontalshift_slider = tk.Scale(
-    root, 
-    from_=-200, 
-    to=1000, 
-    orient="horizontal", 
-    label="horizontal shift", 
-    command=update_horizontalshift,
-    length=300
-)
-horizontalshift_slider.set(horizontalshift)  # Default x value
-horizontalshift_slider.pack()
-verticalshift_slider = tk.Scale(
-    root, 
-    from_=-200, 
-    to=1000, 
-    orient="horizontal", 
-    label="vertical shift",  
-    command=update_verticalshift,
-    length=300
-)
-verticalshift_slider.set(verticalshift)  # Default y value
-verticalshift_slider.pack()
 
 # Variables and constants
 #fov lower than 100 used to cause problems rendering ?
