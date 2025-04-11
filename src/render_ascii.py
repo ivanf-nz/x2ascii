@@ -1,6 +1,6 @@
 import tkinter as tk
 import numpy as np
-from obj_cleaning import get_obj
+from obj_parser import get_obj
 import cv2
 #######################################################################
 #                                                                     #
@@ -166,7 +166,9 @@ def drawscene():
 def rotate_all():
     global points
     # could make more efficient by matrix multiplying the rotation matrixes and then matrix multipy with transposing the points array
-    points = rotateZ(rotateX(points))
+    #points = rotateZ(rotateX(points))
+    points = rotateX(points)
+
 
 # setup Tkinter - will be removed later
 root = tk.Tk()
@@ -191,12 +193,16 @@ camera_pos = np.array([0, 0, 100])
 TIMEDELAY = 16  # for drawing the scene in milliseconds (16 ms is 60 fps)
 size = 2  # size of edges
 
-light_pos = np.array([3,10,0]) #placed above in y direction (x,y,z)
+light_pos = np.array([0,10,3]) #placed above in y direction (x,y,z)
 
-obj = "cube2.obj" #https://www.a1k0n.net/2011/07/20/donut-math.html website might help with lighting
+obj = "../models/cube2.obj" #https://www.a1k0n.net/2011/07/20/donut-math.html website might help with lighting
 points, faces = get_obj(obj)    
 for i in range(180): #added for fox as it is upside down
     points = rotateZ(points)
+for i in range(45):
+    points = rotateY(points)
+for i in range(45):
+    points = rotateX(points)
 drawscene()
 
 root.mainloop()

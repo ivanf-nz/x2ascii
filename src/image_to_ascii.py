@@ -1,6 +1,6 @@
 from PIL import Image, ImageOps
 # input the image and resize it
-new_width = 57
+new_width = 200
 inputname = input("name of image inc .jpg or .png:")
 with Image.open(inputname) as im:
     width, height = im.size

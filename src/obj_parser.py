@@ -1,5 +1,9 @@
 import numpy as np
+import os
 def get_obj(obj):
+    obj = os.path.join(os.path.dirname(__file__), obj)
+    if not os.path.exists(obj):
+        raise FileNotFoundError(f"The file {obj} does not exist.")    
     faces = []
     points = []
     with open(obj,'r') as f:
@@ -28,6 +32,3 @@ def clean_line(line, funct):
         clean_line = np.array(clean_line)
     return clean_line
 
-obj = "cube.obj"
-
-points, faces = get_obj(obj)
