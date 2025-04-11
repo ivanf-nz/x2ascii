@@ -64,7 +64,7 @@ x2ascii/
 │   ├── image_to_ascii.py   # Converts images to ASCII art
 │   ├── obj_parser.py       # Parses and cleans OBJ files
 ├── models/                 # 3D model files
-│   ├── cube.obj            # Cube OBJ file from - https://gist.github.com/MaikKlein0b6d6bb58772c13593d0a0add6004c1c
+│   ├── cube.obj            # Cube OBJ file from - https://gist.github.com/MaikKlein/0b6d6bb58772c13593d0a0add6004c1c
 │   ├── cube2.obj           # Another cube OBJ but uses squares instead of triangles
 ├── output/                 # Output directory for ASCII text files
 ```
