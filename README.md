@@ -25,7 +25,7 @@ x2ascii is a Python project that converts 3D models (OBJ files) and images into 
 ### `src/image_to_ascii.py`
 - Converts images into ASCII text files.
 - Input the image name (with extension) when prompted.
-- Outputs the ASCII art directly to the terminal.
+- Outputs the ASCII art directly to the terminal and a text file in output/ directory.
 
 ### `src/obj_parser.py`
 - Parses and cleans OBJ files to extract vertices and faces.
@@ -50,7 +50,7 @@ x2ascii is a Python project that converts 3D models (OBJ files) and images into 
    python3 src/image_to_ascii.py
    ```
 3. Enter the image location when prompted.
-4. The ASCII art will be displayed directly in the terminal.
+4. The ASCII art will be displayed directly in the terminal and a text file to the output/ directory.
 
 ---
 
@@ -66,10 +66,11 @@ x2ascii/
 ├── models/                 # 3D model files
 │   ├── cube.obj            # Cube OBJ file from - https://gist.github.com/MaikKlein0b6d6bb58772c13593d0a0add6004c1c
 │   ├── cube2.obj           # Another cube OBJ but uses squares instead of triangles
+├── output/                 # Output directory for ASCII text files
 ```
 
 ---
 
 ## Future Improvements
-- Add command-line options to `render_ascii.py` to allow customization of rendering parameters, such as object rotation, camera position, and lighting settings.
+- Add command-line options to `render_ascii.py` and `image_to_ascii.py` to allow customization of rendering parameters, such as object rotation, camera position, and lighting settings.
 - Add unit tests to ensure calculations and other methods are being preformed correctly.
