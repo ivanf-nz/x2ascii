@@ -42,13 +42,14 @@ def project(point):
 def lighting_intensity(face):
     normal = compute_normal(face)
     face_point = points[face[0]]  # any point on the face
-    light_vector = light_pos - face_point # this is a vector from point on face to light and so in same direction as normal
+    #light_vector = light_pos - face_point # this is a vector from point on face to light and so in same direction as normal
+    light_vector = face_point - light_pos
     normal = normal / np.linalg.norm(normal) # normalize to length of 1
     light_vector = light_vector / np.linalg.norm(light_vector) #normalized to ensure in range from 0 to 1
 
     #dot product means that 1 = same direction, 0 = 90 degrees to each other and -1 is opposite direction
-    intensity = 1-max(0.1,np.dot(light_vector ,normal)) #changed with 1- (1 minus) to have black bg for ascii 
-    #intensity = max(0.1,np.dot(light_vector ,normal)) 1 means lit, 0 means not lit
+    intensity = 1-max(0.1,np.dot(light_vector ,normal))  #changed with 1- (1 minus) to have black bg for ascii 
+    #intensity = max(0.1,np.dot(light_vector ,normal)) #1 means lit, 0 means not lit
     return intensity
 
 #draws the faces with light values included
@@ -77,13 +78,13 @@ def compute_normal(face):
     edge1 = p2 - p1
     edge2 = p3 - p1
     normal = np.cross(edge1, edge2)  # cross product
-    return - (normal / np.linalg.norm(normal))  # Normalize to length of 1 and invert with negative sign (ccw->cw direction)
+    return (normal / np.linalg.norm(normal))  # Normalize to length of 1 and invert with negative sign (ccw->cw direction)
 
 def is_face_visible(face):
     normal = compute_normal(face)
     face_point = points[face[0]]  # any point on the face
     view_vector = camera_pos - face_point # from face point to camera pos
-    return np.dot(view_vector, normal) > 0  # true if the face is visible
+    return np.dot(view_vector, normal) < 0  # true if the face is visible
 
 #rotates the whole array by the given angle and using matrix multiplication
 def rotateY(points):
@@ -186,14 +187,14 @@ verticalshift = WindowSizeY
 # Variables and constants
 #fov lower than 100 used to cause problems rendering ?
 FOV = 100  # this is distance to the center of the screen - https://www.youtube.com/watch?v=nvWDgBGcAIM&ab_channel=GraverDev
-camera_pos = np.array([horizontalshift, verticalshift, FOV+distance])
+camera_pos = np.array([0, 0, 100])
 TIMEDELAY = 16  # for drawing the scene in milliseconds (16 ms is 60 fps)
 size = 2  # size of edges
 
-light_pos = np.array([0,10,0]) #placed above in y direction (x,y,z)
+light_pos = np.array([3,10,0]) #placed above in y direction (x,y,z)
 
-obj = "cube.obj" #https://www.a1k0n.net/2011/07/20/donut-math.html website might help with lighting
-points, faces = get_obj(obj)
+obj = "cube2.obj" #https://www.a1k0n.net/2011/07/20/donut-math.html website might help with lighting
+points, faces = get_obj(obj)    
 for i in range(180): #added for fox as it is upside down
     points = rotateZ(points)
 drawscene()
