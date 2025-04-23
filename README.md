@@ -2,8 +2,8 @@
 
 x2ascii is a Python project that converts 3D models (OBJ files) and images into ASCII art. It includes tools for rendering 3D objects as ASCII in the terminal and converting images into ASCII text files.
 
-<img src="https://github.com/user-attachments/assets/e886bc03-a480-4845-895f-f8f832e1f0df" alt="ascii_cube" width="300" height="300">
-<img width="650" alt="image" src="https://github.com/user-attachments/assets/bf9367cf-ef32-46a2-9e1d-d3b6004928ba" />
+<img src="https://raw.githubusercontent.com/ivanf-nz/x2ascii/refs/heads/main/readme_images/spinning_cube.gif" alt="ascii_cube" width="300" height="300">
+<img width="650" alt="image" src="https://raw.githubusercontent.com/ivanf-nz/x2ascii/refs/heads/main/readme_images/print_hello_ascii.png" />
 
 ---
 
