@@ -1,33 +1,14 @@
 # import tkinter as tk
 import numpy as np
-from obj_parser import get_obj
-import cv2
-import time
 import argparse
 from object3d import Object3D
 from renderer import Renderer
-#######################################################################
-#                                                                     #
-#                   3D MODEL ASCII VIEWER                             #
-#                                                                     #
-# X positive is defined as going to the right                         #
-# Y positive is defined as up and down                                #
-# Z positive is defined as going towards the viewer, out of the screen#
-#######################################################################
 
-# TODO:
-#
-# make options for loading objs, moving them by 0.5 or 1 (points array)
-# option for disabling black outline between edges
+# Directions for the 3D model viewer
+# x positive is defined as going to the right
+# y positive is defined as up and down
+# z positive is defined as going towards the viewer, out of the screen
 
-# rotation to add a input of degree
-
-# make it copy and pastable kinda already done but could be improved (button outputs a ascii file)
-# improve the comments
-# rotate camera - not the cube (how?)
-
-
-#######################################################################
 
 def main():
     parser = argparse.ArgumentParser(description="3D Model ASCII Viewer")
@@ -58,6 +39,6 @@ def main():
     renderer.run()
 
 
-# Run file
+# Run main file
 if __name__ == "__main__":
     main()
