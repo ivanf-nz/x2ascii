@@ -1,7 +1,8 @@
-import tkinter as tk
+#import tkinter as tk
 import numpy as np
 from obj_parser import get_obj
 import cv2
+import time
 #######################################################################
 #                                                                     #
 #                   3D MODEL ASCII VIEWER                             #
@@ -158,9 +159,6 @@ def drawscene():
     except Exception as e:
         print(f"An error occurred: {e}")
     
-    # call the same function to repeatedly draw the scene
-    root.after(TIMEDELAY, drawscene) #might not need this later on
-
 
 #rotates the scene 
 def rotate_all():
@@ -170,8 +168,6 @@ def rotate_all():
     points = rotateX(points)
 
 
-# setup Tkinter - will be removed later
-root = tk.Tk()
 
 # setup canvas size for rendering object
 WindowSizeY = 300
@@ -205,4 +201,7 @@ for i in range(45):
     points = rotateX(points)
 drawscene()
 
-root.mainloop()
+TIMEDELAY = 60
+while True:
+    drawscene()
+    time.sleep(TIMEDELAY/1000) #sleep for the time delay
