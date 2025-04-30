@@ -88,27 +88,27 @@ def is_face_visible(face):
     return np.dot(view_vector, normal) < 0  # true if the face is visible
 
 #rotates the whole array by the given angle and using matrix multiplication
-def rotateY(points):
+def rotateY(points, frame_angle): # Add frame_angle parameter
     y_rotation_matrix = np.array([
         [1, 0, 0],
-        [0, np.cos(angle), -np.sin(angle)],
-        [0, np.sin(angle), np.cos(angle)]])
+        [0, np.cos(frame_angle), -np.sin(frame_angle)], 
+        [0, np.sin(frame_angle), np.cos(frame_angle)]]) 
     # @ is matrix multiplication with T being its transpose
     points = points @ y_rotation_matrix.T
     return points
 
-def rotateX(points):
+def rotateX(points, frame_angle): # Add frame_angle parameter
     x_rotation_matrix = np.array([
-        [np.cos(angle), 0, np.sin(angle)],
+        [np.cos(frame_angle), 0, np.sin(frame_angle)], 
         [0, 1, 0],
-        [-np.sin(angle), 0, np.cos(angle)]])
+        [-np.sin(frame_angle), 0, np.cos(frame_angle)]]) 
     points = points @ x_rotation_matrix.T
     return points
 
-def rotateZ(points):
+def rotateZ(points, frame_angle): # Add frame_angle parameter
     z_rotation_matrix = np.array([
-        [np.cos(angle), -np.sin(angle), 0],
-        [np.sin(angle), np.cos(angle), 0],
+        [np.cos(frame_angle), -np.sin(frame_angle), 0], 
+        [np.sin(frame_angle), np.cos(frame_angle), 0], 
         [0, 0, 1]])
     points = points @ z_rotation_matrix.T
     return points
@@ -143,7 +143,7 @@ def sort_faces_by_distance(faces):
     sorted_faces = sorted(zip(faces, distances),key=lambda x: x[1],) #put reverse=True for really trippy ghost effect
     # sorted from furthest to closest
     return [face for face, _ in sorted_faces]
-def drawscene():
+def drawscene(dt):
     global grid
     grid = np.full((WindowSizeY,WindowSizeX),255, dtype=np.uint8) #255 to set background to white
     sorted_faces = sort_faces_by_distance(faces)
@@ -152,7 +152,7 @@ def drawscene():
             intensity = lighting_intensity(face)
             drawface(face, intensity)
     
-    rotate_all()
+    rotate_all(dt)
 
     try: #printing to screen hasnt been fixed and can cause errors as the canvas is being created
         print_ascii(grid,70)
@@ -161,11 +161,12 @@ def drawscene():
     
 
 #rotates the scene 
-def rotate_all():
+def rotate_all(dt):
     global points
+    frame_rotation_angle = np.radians(ROTATION_DEGREES_PER_SECOND * dt)
     # could make more efficient by matrix multiplying the rotation matrixes and then matrix multipy with transposing the points array
     #points = rotateZ(rotateX(points))
-    points = rotateX(points)
+    points = rotateX(points, frame_rotation_angle)
 
 
 
@@ -189,19 +190,27 @@ camera_pos = np.array([0, 0, 100])
 TIMEDELAY = 16  # for drawing the scene in milliseconds (16 ms is 60 fps)
 size = 2  # size of edges
 
+ROTATION_DEGREES_PER_SECOND = 45
+
 light_pos = np.array([0,10,3]) #placed above in y direction (x,y,z)
 
 obj = "../models/cube2.obj" #https://www.a1k0n.net/2011/07/20/donut-math.html website might help with lighting
 points, faces = get_obj(obj)    
+initial_angle_rad = np.radians(1) #rotation angle in radians (needed for rotation functions)
 for i in range(180): #added for fox as it is upside down
-    points = rotateZ(points)
+    points = rotateZ(points, initial_angle_rad)
 for i in range(45):
-    points = rotateY(points)
+    points = rotateY(points, initial_angle_rad)
 for i in range(45):
-    points = rotateX(points)
-drawscene()
+    points = rotateX(points, initial_angle_rad)
 
-TIMEDELAY = 60
+last_frame_time = time.perf_counter()
 while True:
-    drawscene()
-    time.sleep(TIMEDELAY/1000) #sleep for the time delay
+
+    current_time = time.perf_counter()
+
+    #delta time ensures that the rotation speed is constant regardless of the frame rate (remember dt is 1 frame behind!)
+    dt = current_time - last_frame_time #delta time 
+    last_frame_time = current_time  # update last_frame_time for the next frame
+    drawscene(dt)
+    time.sleep(TIMEDELAY/1000) #sleep to ensure 60 fps
