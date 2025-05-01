@@ -6,7 +6,7 @@ from object3d import Object3D
 
 # This class is used to render a 3D object in a 2D space.
 class Renderer:
-    def __init__(self, model, width, height, distance, speed):
+    def __init__(self, model, width, height, distance, speed, thickness):
         # Object3D(filepath) which contains the points and faces of the object
         self.model = model
 
@@ -27,6 +27,8 @@ class Renderer:
         self.ascii_chars = "@%#*+=-:. "
 
         self.degree_per_second = speed
+
+        self.thickness = thickness
 
     # projects a 3d point onto a 2d surface (your screen)
     def project(self, point):
@@ -77,10 +79,18 @@ class Renderer:
         facepoints = np.array(facepoints, dtype=np.int32)
         cv2.fillPoly(self.grid, [facepoints], color=colour_value)
 
+    def calculate_edge(self, face):
         # need to add option for drawing edges
-        # for i in range(len(face)-1): #draws the edges
-        # drawedge(points[face[i]],points[face[i + 1]])
-        # drawedge(points[face[0]],points[face[(len(face)-1)]]) #loops back from the end point to the start point - if not here will have missing edges
+        for i in range(len(face)-1):  # draws the edges
+            self.drawedge(self.project(self.model.points[face[i]]),
+                          self.project(self.model.points[face[i + 1]]))
+        # loops back from the end point to the start point - if not here will have missing edges
+        self.drawedge(self.project(self.model.points[face[0]]),
+                      self.project(self.model.points[face[(len(face)-1)]]))
+
+    def drawedge(self, point1, point2):
+        # Draw a line between two points
+        cv2.line(self.grid, point1, point2, (0, 0, 0), self.thickness)
 
     def is_face_visible(self, face):
         normal = self.compute_normal(face)
@@ -131,11 +141,15 @@ class Renderer:
 
         # 255 to set background to white
         self.grid = np.full((self.height, self.width), 255, dtype=np.uint8)
-        sorted_faces = self.sort_faces_by_distance(self.model.faces)
-        for face in sorted_faces:
-            if self.is_face_visible(face):
-                intensity = self.lighting_intensity(face)
-                self.drawface(face, intensity)
+        if self.thickness == 0:
+            sorted_faces = self.sort_faces_by_distance(self.model.faces)
+            for face in sorted_faces:
+                if self.is_face_visible(face):
+                    intensity = self.lighting_intensity(face)
+                    self.drawface(face, intensity)
+        else:
+            for face in self.model.faces:
+                self.calculate_edge(face)
 
         try:  # printing to screen hasnt been fixed and can cause errors as the canvas is being created
             self.print_ascii()
