@@ -37,19 +37,19 @@ def main():
     args = parser.parse_args()
 
     # Load the object from the specified file (has the points and faces)
-    model = Object3D(args.obj_file)
+    model = Object3D(args.obj_file, [args.x_rot, args.y_rot, args.z_rot])
 
     # Rotate the object upside down (180 degrees) if the flag is set
     if args.flip:
-        model.rotate_z(np.radians(180))
+        model.apply_rotation_z(np.radians(180))  # Use the new method
 
-    # Initial rotation regardless of flip - can remove later
-    model.rotate_y(np.radians(45))
-    model.rotate_x(np.radians(45))
+    # can remove later
+    model.apply_rotation_y(np.radians(45))
+    model.apply_rotation_x(np.radians(45))
 
     # Create the renderer with the specified width and height
     renderer = Renderer(model, args.width, args.height,
-                        args.distance, args.speed, args.thickness, args.x_rot, args.y_rot, args.z_rot)
+                        args.distance, args.speed, args.thickness)
 
     # Run the renderer (which has the main loop)
     renderer.run()

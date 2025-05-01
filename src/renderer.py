@@ -6,7 +6,7 @@ from object3d import Object3D
 
 # This class is used to render a 3D object in a 2D space.
 class Renderer:
-    def __init__(self, model, width, height, distance, speed, thickness, x_rot, y_rot, z_rot):
+    def __init__(self, model, width, height, distance, speed, thickness):
         # Object3D(filepath) which contains the points and faces of the object
         self.model = model
 
@@ -27,9 +27,6 @@ class Renderer:
         self.ascii_chars = "@%#*+=-:. "
 
         self.degree_per_second = speed
-        self.x_rot = x_rot
-        self.y_rot = y_rot
-        self.z_rot = z_rot
 
         self.thickness = thickness
 
@@ -143,17 +140,7 @@ class Renderer:
             # rotate x degrees per second * dt (to ensure rotation is the same regardless of frame rate)
             self.degree_per_second) * dt
         # if no rotation is set, rotate around y axis
-        if not (self.x_rot) and not (self.y_rot) and not (self.z_rot):
-            self.model.rotate_y(frame_rotation_angle)
-
-        # if rotation is set, rotate around the specified axis
-        else:
-            if self.x_rot:  # rotate around x axis
-                self.model.rotate_x(frame_rotation_angle)
-            if self.y_rot:  # rotate around y axis
-                self.model.rotate_y(frame_rotation_angle)
-            if self.z_rot:  # rotate around z axis
-                self.model.rotate_z(frame_rotation_angle)
+        self.model.rotate(frame_rotation_angle)
 
         # 255 to set background to white
         self.grid = np.full((self.height, self.width), 255, dtype=np.uint8)

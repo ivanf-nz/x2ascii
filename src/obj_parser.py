@@ -27,7 +27,7 @@ def get_obj(obj_path_or_name):
 
     print(f"Loading model from: {resolved_path}")  # Optional: confirm path
     faces = []
-    points = []
+    points_list = []  # Read into a temporary list first
     with open(resolved_path, 'r') as f:
         for line in f:
             line = line.strip()
@@ -35,8 +35,27 @@ def get_obj(obj_path_or_name):
             if line.startswith('f '):
                 faces.append(clean_line(line, 'f'))
             elif line.startswith('v '):
-                points.append(clean_line(line, 'v'))
-    return points, faces
+                points_list.append(clean_line(line, 'v'))  # Append to list
+
+    # Convert points list to NumPy array for normalization
+    points = np.array(points_list, dtype=float)
+
+    # Center the model around the origin
+    if points.size > 0:
+        centroid = np.mean(points, axis=0)
+        points -= centroid
+        # Optional: confirm centering
+        print(f"Centered model by offset: {centroid}")
+
+    # Normalize points
+    if points.size > 0:  # Check if there are any points
+        max_abs_coord = np.max(np.abs(points))
+        if max_abs_coord > 1e-6:  # Avoid division by zero or near-zero
+            points /= max_abs_coord
+            # Optional: confirm normalization
+            print(f"Normalized points by factor: {max_abs_coord:.4f}")
+
+    return points, faces  # Return numpy array for points
 
 # returns a clean line as a array
 
@@ -53,5 +72,4 @@ def clean_line(line, funct):
         clean_line = [x - 1 for x in clean_line]
     elif funct == 'v':
         clean_line = [float(x) for x in clean_line.split()]
-        clean_line = np.array(clean_line)
     return clean_line
