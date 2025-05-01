@@ -23,6 +23,9 @@ def main():
                         help="If present, will flip the object upside down initially")
     parser.add_argument("-s", "--speed", type=int, default=45,
                         help="Speed of rotation in degrees per second")
+    parser.add_argument("-d", "--distance", type=int, default=50,
+                        # change to distance away from camera
+                        help="Distance Multiplier for the projection")
     args = parser.parse_args()
 
     # Load the object from the specified file (has the points and faces)
@@ -37,7 +40,8 @@ def main():
     model.rotate_x(np.radians(45))
 
     # Create the renderer with the specified width and height
-    renderer = Renderer(model, args.width, args.height, args.speed)
+    renderer = Renderer(model, args.width, args.height,
+                        args.distance, args.speed)
 
     # Run the renderer (which has the main loop)
     renderer.run()

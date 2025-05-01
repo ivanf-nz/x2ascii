@@ -6,7 +6,7 @@ from object3d import Object3D
 
 # This class is used to render a 3D object in a 2D space.
 class Renderer:
-    def __init__(self, model, width, height, speed):
+    def __init__(self, model, width, height, distance, speed):
         # Object3D(filepath) which contains the points and faces of the object
         self.model = model
 
@@ -16,7 +16,7 @@ class Renderer:
 
         # Fov and distance constants for projection (triangle calculations)
         self.fov = 10
-        self.distance = 50
+        self.distance = distance
 
         # placed above in y and a little bit in z direction (x,y,z)
         self.light_pos = np.array([0, 10, 3])
