@@ -21,6 +21,8 @@ def main():
                         help="Height of the output ASCII art")  # Same as above
     parser.add_argument("-f", "--flip", action='store_true',
                         help="If present, will flip the object upside down initially")
+    parser.add_argument("-s", "--speed", type=int, default=45,
+                        help="Speed of rotation in degrees per second")
     args = parser.parse_args()
 
     # Load the object from the specified file (has the points and faces)
@@ -35,7 +37,7 @@ def main():
     model.rotate_x(np.radians(45))
 
     # Create the renderer with the specified width and height
-    renderer = Renderer(model, args.width, args.height)
+    renderer = Renderer(model, args.width, args.height, args.speed)
 
     # Run the renderer (which has the main loop)
     renderer.run()

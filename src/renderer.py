@@ -6,7 +6,7 @@ from object3d import Object3D
 
 # This class is used to render a 3D object in a 2D space.
 class Renderer:
-    def __init__(self, model, width, height):
+    def __init__(self, model, width, height, speed):
         # Object3D(filepath) which contains the points and faces of the object
         self.model = model
 
@@ -25,6 +25,8 @@ class Renderer:
         self.grid = np.full((self.height, self.width), 255,
                             dtype=np.uint8)
         self.ascii_chars = "@%#*+=-:. "
+
+        self.degree_per_second = speed
 
     # projects a 3d point onto a 2d surface (your screen)
     def project(self, point):
@@ -122,8 +124,9 @@ class Renderer:
         print(f"\r{print_line}", end="", flush=True)
 
     def draw_scene(self, dt):
+
         frame_rotation_angle = np.radians(
-            45) * dt  # rotate 45 degrees per second * dt
+            self.degree_per_second) * dt  # rotate 45 degrees per second * dt
         self.model.rotate_y(frame_rotation_angle)
 
         # 255 to set background to white
@@ -150,4 +153,6 @@ class Renderer:
                 dt = current_time - self.last_frame_time
 
             self.last_frame_time = current_time
+
             self.draw_scene(dt)
+            # print(f"fps={1/dt:.2f}", end="\r") Print the FPS to the console
