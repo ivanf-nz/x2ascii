@@ -155,4 +155,4 @@ class Renderer:
             self.last_frame_time = current_time
 
             self.draw_scene(dt)
-            # print(f"fps={1/dt:.2f}", end="\r") Print the FPS to the console
+            # print(f"fps={1/dt:.2f}", end="\r")  # Print the FPS to the console
