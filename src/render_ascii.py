@@ -28,6 +28,12 @@ def main():
                         help="Distance Multiplier for the projection")
     parser.add_argument("-t", "--thickness", type=int, default=0,
                         help="Thickness of the edges in the rendering (Needs to be present to enbale wireframe mode)")
+    parser.add_argument("-x", "--x_rot", action='store_true',
+                        help="If present, will rotate the object around the x axis")
+    parser.add_argument("-y", "--y_rot", action='store_true',
+                        help="If present, will rotate the object around the y axis")
+    parser.add_argument("-z", "--z_rot", action='store_true',
+                        help="If present, will rotate the object around the z axis")
     args = parser.parse_args()
 
     # Load the object from the specified file (has the points and faces)
@@ -37,13 +43,13 @@ def main():
     if args.flip:
         model.rotate_z(np.radians(180))
 
-    # Initial rotation regardless of flip
+    # Initial rotation regardless of flip - can remove later
     model.rotate_y(np.radians(45))
     model.rotate_x(np.radians(45))
 
     # Create the renderer with the specified width and height
     renderer = Renderer(model, args.width, args.height,
-                        args.distance, args.speed, args.thickness)
+                        args.distance, args.speed, args.thickness, args.x_rot, args.y_rot, args.z_rot)
 
     # Run the renderer (which has the main loop)
     renderer.run()
