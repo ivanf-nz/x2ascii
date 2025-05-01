@@ -15,20 +15,22 @@ def main():
     parser.add_argument(
         "-o", "--obj_file", type=str, default="../models/cube2.obj", help="Path to the .obj file")
     parser.add_argument("--width", type=int, default=400,
+                        # Doesnt actually change the height of the ascii art, changes the height of cv2 window which is resized
                         help="Width of the output ASCII art")
     parser.add_argument("--height", type=int, default=300,
-                        help="Height of the output ASCII art")
-    parser.add_argument("--f", type=bool, default=False,
-                        help="If True, will flip the object upside down")
+                        help="Height of the output ASCII art")  # Same as above
+    parser.add_argument("-f", "--flip", action='store_true',
+                        help="If present, will flip the object upside down initially")
     args = parser.parse_args()
 
     # Load the object from the specified file (has the points and faces)
     model = Object3D(args.obj_file)
 
-    # Rotate the object upside down (180 degrees)
-    # if args.f:
-    model.rotate_z(np.radians(180))
+    # Rotate the object upside down (180 degrees) if the flag is set
+    if args.flip:
+        model.rotate_z(np.radians(180))
 
+    # Initial rotation regardless of flip
     model.rotate_y(np.radians(45))
     model.rotate_x(np.radians(45))
 
