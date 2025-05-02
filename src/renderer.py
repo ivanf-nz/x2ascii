@@ -113,10 +113,8 @@ class Renderer:
         new_height = int(self.height/self.width * 70 * 0.5)
         im = cv2.resize(self.grid, (70, new_height))
 
-        # ascii define white to black
+        # initialise the ascii line to be printed
         print_line = ""
-        # opens the text file - to be added later
-        # f = open("outputascii.txt","w")
 
         # goes thorugh each pixel
         for i in range(new_height):
@@ -172,4 +170,4 @@ class Renderer:
             self.last_frame_time = current_time
 
             self.draw_scene(dt)
-            # print(f"fps={1/dt:.2f}", end="\r")  # Print the FPS to the console
+            print(f"fps={1/dt:.2f}", end="\r")  # Print the FPS to the console
