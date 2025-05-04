@@ -14,20 +14,20 @@ def main():
     parser = argparse.ArgumentParser(description="3D Model ASCII Viewer")
     parser.add_argument(
         "-o", "--obj_file", type=str, default="../models/cube2.obj", help="Path to the .obj file")
-    parser.add_argument("--width", type=int, default=400,
+    parser.add_argument("--width", type=int, default=60,
                         # Doesnt actually change the height of the ascii art, changes the height of cv2 window which is resized
                         help="Width of the output ASCII art")
-    parser.add_argument("--height", type=int, default=300,
+    parser.add_argument("--height", type=int, default=30,
                         help="Height of the output ASCII art")  # Same as above
     parser.add_argument("-f", "--flip", action='store_true',
                         help="If present, will flip the object upside down initially")
     parser.add_argument("-s", "--speed", type=int, default=45,
                         help="Speed of rotation in degrees per second")
-    parser.add_argument("-d", "--distance", type=int, default=50,
+    parser.add_argument("-d", "--distance", type=int, default=12,
                         # change to distance away from camera
-                        help="Distance Multiplier for the projection")
+                        help="Distance Multiplier for the projection (default: 12)")
     parser.add_argument("-t", "--thickness", type=int, default=0,
-                        help="Thickness of the edges in the rendering (Needs to be present to enbale wireframe mode)")
+                        help="Thickness of the edges in the rendering (Needs to be present to enable wireframe mode)")
     parser.add_argument("-x", "--x_rot", action='store_true',
                         help="If present, will rotate the object around the x axis")
     parser.add_argument("-y", "--y_rot", action='store_true',
@@ -44,8 +44,9 @@ def main():
         model.apply_rotation_z(np.radians(180))  # Use the new method
 
     # can remove later
-    model.apply_rotation_y(np.radians(45))
-    model.apply_rotation_x(np.radians(45))
+    # model.apply_rotation_y(np.radians(45))
+    # model.apply_rotation_y(np.radians(45))
+    # model.apply_rotation_x(np.radians(45))
 
     # Create the renderer with the specified width and height
     renderer = Renderer(model, args.width, args.height,

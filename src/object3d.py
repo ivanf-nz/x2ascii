@@ -7,9 +7,10 @@ from obj_parser import get_obj
 class Object3D:
     def __init__(self, filepath, rotations):
         points, faces = get_obj(filepath)
-        # Points in 3D space
+        # Points in 3D space [[x, y, z], [x, y, z], ...]
         self.points = np.array(points)
-        # Faces of the object, defined by index in the points array
+        # Faces of the object[[point1, point2, point3],[point1],[point2] ...]
+        # where point is the index of the point in the points array
         self.faces = np.array(faces)
 
         # Check if rotations are all False

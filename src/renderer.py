@@ -3,16 +3,17 @@ import cv2
 import time
 from object3d import Object3D
 
-
 # This class is used to render a 3D object in a 2D space.
+
+
 class Renderer:
-    def __init__(self, model, width, height, distance, speed, thickness):
+    def __init__(self, model: Object3D, width: int, height: int, distance: int, speed: int, thickness: int):
         # Object3D(filepath) which contains the points and faces of the object
         self.model = model
 
         # Width and height of the screen
-        self.width = width
-        self.height = height
+        self.width = 60
+        self.height = 30
 
         # Fov and distance constants for projection (triangle calculations)
         self.fov = 10
@@ -31,13 +32,19 @@ class Renderer:
         self.thickness = thickness
 
     # projects a 3d point onto a 2d surface (your screen)
+    # the points are in the format [[x,y,z],[x,y,z]...]
+    # the projected points are in the format [[x,y],[x,y]...]
+    # vectorized for speed and efficiency
+    def project_all_points(self, points):
 
-    def project(self, point):
-        x, y, z = point
+        x = points[:, 0]
+        y = points[:, 1]
+        z = points[:, 2]
         px = self.width / 2 + ((x * self.fov) / (self.fov + z)) * self.distance
         py = self.height / 2 + \
-            ((y * self.fov) / (self.fov + z)) * self.distance
-        return int(px), int(py)
+            ((y * self.fov) / (self.fov + z)) * \
+            self.distance * 0.5  # adjust for height of chars
+        return np.column_stack((px, py)).astype(int)
 
     def compute_normal(self, face):
         p1, p2, p3 = self.model.points[face[0]
@@ -68,11 +75,11 @@ class Renderer:
     # draws the faces with light values included
         # black = lit, white = unlit
 
-    def drawface(self, face, intensity):
+    def drawface(self, face, intensity, projected_points):
 
         facepoints = []
         for i in range(len(face)):
-            px, py = self.project(self.model.points[face[i]])
+            px, py = projected_points[face[i]]
             # creates an array of points for that face
             facepoints.append((px, py))
 
@@ -80,14 +87,15 @@ class Renderer:
         facepoints = np.array(facepoints, dtype=np.int32)
         cv2.fillPoly(self.grid, [facepoints], color=colour_value)
 
-    def calculate_edge(self, face):
+    def calculate_edge(self, face, projected_points):
         # need to add option for drawing edges
         for i in range(len(face)-1):  # draws the edges
-            self.drawedge(self.project(self.model.points[face[i]]),
-                          self.project(self.model.points[face[i + 1]]))
+
+            self.drawedge(projected_points[face[i]],
+                          projected_points[face[i + 1]])
         # loops back from the end point to the start point - if not here will have missing edges
-        self.drawedge(self.project(self.model.points[face[0]]),
-                      self.project(self.model.points[face[(len(face)-1)]]))
+        self.drawedge(projected_points[face[0]],
+                      projected_points[face[(len(face)-1)]])
 
     def drawedge(self, point1, point2):
         # Draw a line between two points
@@ -110,16 +118,15 @@ class Renderer:
         return [face for face, _ in sorted_faces]
 
     def print_ascii(self):
-        new_height = int(self.height/self.width * 70 * 0.5)
-        im = cv2.resize(self.grid, (70, new_height))
 
+        im = self.grid
         # initialise the ascii line to be printed
         print_line = ""
 
         # goes thorugh each pixel
-        for i in range(new_height):
+        for i in range(self.height):
 
-            for j in range(70):
+            for j in range(self.width):
 
                 # gets pixel value
                 pixel = im[i, j]
@@ -139,7 +146,7 @@ class Renderer:
             self.degree_per_second) * dt
         # if no rotation is set, rotate around y axis
         self.model.rotate(frame_rotation_angle)
-
+        projected_points = self.project_all_points(self.model.points)
         # 255 to set background to white
         self.grid = np.full((self.height, self.width), 255, dtype=np.uint8)
         if self.thickness == 0:
@@ -147,10 +154,10 @@ class Renderer:
             for face in sorted_faces:
                 if self.is_face_visible(face):
                     intensity = self.lighting_intensity(face)
-                    self.drawface(face, intensity)
+                    self.drawface(face, intensity, projected_points)
         else:
             for face in self.model.faces:
-                self.calculate_edge(face)
+                self.calculate_edge(face, projected_points)
 
         try:  # printing to screen hasnt been fixed and can cause errors as the canvas is being created
             self.print_ascii()
