@@ -44,9 +44,9 @@ def main():
         model.apply_rotation_z(np.radians(180))  # Use the new method
 
     # can remove later
-    # model.apply_rotation_y(np.radians(45))
-    # model.apply_rotation_y(np.radians(45))
-    # model.apply_rotation_x(np.radians(45))
+    model.apply_rotation_y(np.radians(45))
+    model.apply_rotation_y(np.radians(45))
+    model.apply_rotation_x(np.radians(45))
 
     # Create the renderer with the specified width and height
     renderer = Renderer(model, args.width, args.height,

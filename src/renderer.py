@@ -46,31 +46,33 @@ class Renderer:
             self.distance * 0.5  # adjust for height of chars
         return np.column_stack((px, py)).astype(int)
 
-    def compute_normal(self, face):
-        p1, p2, p3 = self.model.points[face[0]
-                                       ], self.model.points[face[1]], self.model.points[face[2]]
+    # computes the normal of a face
+    def compute_all_normals(self):
+        p1 = self.model.points[self.model.faces[:, 0]]
+        p2 = self.model.points[self.model.faces[:, 1]]
+        p3 = self.model.points[self.model.faces[:, 2]]
         edge1 = p2 - p1
         edge2 = p3 - p1
         normal = np.cross(edge1, edge2)
         # Normalize to length of 1 (ccw->cw direction depends on negative sign of normal)
-        return normal / np.linalg.norm(normal)
+        return normal / np.linalg.norm(normal, axis=1, keepdims=True)
 
     # determines the lighting intensity of a face compared to the light position (assuming light is pointing at object at all times)
     # returns a value from 0 to 1 where 0 means lit and 1 means unlight (because of how white = nothing printing in ascii and so 0 = black)
-    def lighting_intensity(self, face):
-        normal = self.compute_normal(face)
-        face_point = self.model.points[face[0]]  # any point on the face
-        # light_vector = light_pos - face_point # this is a vector from point on face to light and so in same direction as normal
-        light_vector = face_point - self.light_pos
-        normal = normal / np.linalg.norm(normal)  # normalize to length of 1
-        # normalized to ensure in range from 0 to 1
-        light_vector = light_vector / np.linalg.norm(light_vector)
 
+    def compute_all_lighting_intensity(self, points, computed_normals):
+        # compute the lighting intensity for one point on the face
+
+        light_vectors = points - self.light_pos
+
+        # Normalize the light vectors
+        light_vectors = light_vectors / \
+            np.linalg.norm(light_vectors, axis=1, keepdims=True)
         # dot product means that 1 = same direction, 0 = 90 degrees to each other and -1 is opposite direction
         # changed with 1 minus to have black bg for ascii
-        intensity = 1 - max(0.1, np.dot(light_vector, normal))
-
-        return intensity
+        dot_product = np.einsum('ij,ij->i', light_vectors, computed_normals)
+        intensities = 1 - np.maximum(0.1, dot_product)
+        return intensities
 
     # draws the faces with light values included
         # black = lit, white = unlit
@@ -101,21 +103,27 @@ class Renderer:
         # Draw a line between two points
         cv2.line(self.grid, point1, point2, (0, 0, 0), self.thickness)
 
-    def is_face_visible(self, face):
-        normal = self.compute_normal(face)
-        face_point = self.model.points[face[0]]  # any point on the face
-        view_vector = self.camera_pos - face_point  # from face point to camera pos
-        return np.dot(view_vector, normal) < 0  # true if the face is visible
+    def is_face_visible_mask(self, normals):
+        # Check if the face is visible based on the normals
+        # from point on face to camera
+        view_vector = self.camera_pos - \
+            self.model.points[self.model.faces[:, 0]
+                              ]  # use first point of face
+        # Element wise multiplication and sum to get the dot product
+        # True if the face is visible
+        return np.einsum('ij,ij->i', view_vector, normals) < 0
 
     def sort_faces_by_distance(self, faces):
-        centroids = [np.mean(self.model.points[face], axis=0)
-                     for face in faces]
-        distances = [np.linalg.norm(self.camera_pos - centroid)
-                     for centroid in centroids]
-        # put reverse=True for really trippy ghost effect
-        sorted_faces = sorted(zip(faces, distances), key=lambda x: x[1])
-        # sorted from furthest to closest
-        return [face for face, _ in sorted_faces]
+        # Compute centroids for all faces
+        centroids = np.array(
+            [np.mean(self.model.points[face], axis=0) for face in faces])
+        # Compute distances from camera to each centroid
+        distances = np.linalg.norm(self.camera_pos - centroids, axis=1)
+        # Get sorted indices (furthest to closest)
+        sorted_indices = np.argsort(-distances)
+        # Return faces indices in sorted order
+        return sorted_indices
+        # return np.array([faces[i] for i in sorted_indices])
 
     def print_ascii(self):
 
@@ -146,17 +154,30 @@ class Renderer:
             self.degree_per_second) * dt
         # if no rotation is set, rotate around y axis
         self.model.rotate(frame_rotation_angle)
-        projected_points = self.project_all_points(self.model.points)
+
+        # vectorized functions
+        projected_points = self.project_all_points(
+            self.model.points)  # Correct
+        computed_normals = self.compute_all_normals()  # Correct
+
+        visible_mask = self.is_face_visible_mask(computed_normals)  # Correct
+        visible_faces = self.model.faces[visible_mask]  # Correct
+        visible_normals = computed_normals[visible_mask]  # Correct
         # 255 to set background to white
-        self.grid = np.full((self.height, self.width), 255, dtype=np.uint8)
+        self.grid = np.full((self.height, self.width),
+                            255, dtype=np.uint8)  # Correct
         if self.thickness == 0:
-            sorted_faces = self.sort_faces_by_distance(self.model.faces)
-            for face in sorted_faces:
-                if self.is_face_visible(face):
-                    intensity = self.lighting_intensity(face)
-                    self.drawface(face, intensity, projected_points)
+            sorted_faces_indices = self.sort_faces_by_distance(
+                visible_faces)
+            sorted_faces = visible_faces[sorted_faces_indices]
+            sorted_normals = visible_normals[sorted_faces_indices]
+            intensities = self.compute_all_lighting_intensity(self.model.points[sorted_faces[:, 0]],
+                                                              sorted_normals)
+            for idx, face in enumerate(sorted_faces):
+                intensity = intensities[idx]
+                self.drawface(face, intensity, projected_points)
         else:
-            for face in self.model.faces:
+            for face in visible_faces:
                 self.calculate_edge(face, projected_points)
 
         try:  # printing to screen hasnt been fixed and can cause errors as the canvas is being created
