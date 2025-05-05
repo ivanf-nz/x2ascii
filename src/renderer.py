@@ -16,12 +16,12 @@ class Renderer:
         self.height = 30
 
         # Fov and distance constants for projection (triangle calculations)
-        self.fov = 10
+        self.fov = 100  # KEEP AT 100
         self.distance = distance
 
         # placed above in y and a little bit in z direction (x,y,z)
-        self.light_pos = np.array([0, 10, 3])
-        self.camera_pos = np.array([0, 0, 100])
+        self.light_pos = np.array([0, 30, 3])
+        self.camera_pos = np.array([0, 0, 10])
 
         self.grid = np.full((self.height, self.width), 255,
                             dtype=np.uint8)
@@ -44,7 +44,7 @@ class Renderer:
         py = self.height / 2 + \
             ((y * self.fov) / (self.fov + z)) * \
             self.distance * 0.5  # adjust for height of chars
-        return np.column_stack((px, py)).astype(int)
+        return np.column_stack((px, py)).astype(np.int32)
 
     # computes the normal of a face
     def compute_all_normals(self):
@@ -157,16 +157,17 @@ class Renderer:
 
         # vectorized functions
         projected_points = self.project_all_points(
-            self.model.points)  # Correct
-        computed_normals = self.compute_all_normals()  # Correct
+            self.model.points)
+        computed_normals = self.compute_all_normals()
 
-        visible_mask = self.is_face_visible_mask(computed_normals)  # Correct
-        visible_faces = self.model.faces[visible_mask]  # Correct
-        visible_normals = computed_normals[visible_mask]  # Correct
         # 255 to set background to white
         self.grid = np.full((self.height, self.width),
-                            255, dtype=np.uint8)  # Correct
+                            255, dtype=np.uint8)
         if self.thickness == 0:
+            visible_mask = self.is_face_visible_mask(
+                computed_normals)
+            visible_faces = self.model.faces[visible_mask]
+            visible_normals = computed_normals[visible_mask]
             sorted_faces_indices = self.sort_faces_by_distance(
                 visible_faces)
             sorted_faces = visible_faces[sorted_faces_indices]
@@ -177,7 +178,7 @@ class Renderer:
                 intensity = intensities[idx]
                 self.drawface(face, intensity, projected_points)
         else:
-            for face in visible_faces:
+            for face in self.model.faces:
                 self.calculate_edge(face, projected_points)
 
         try:  # printing to screen hasnt been fixed and can cause errors as the canvas is being created
