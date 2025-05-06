@@ -44,7 +44,7 @@ class Renderer:
         py = self.height / 2 + \
             ((y * self.fov) / (self.fov + z)) * \
             self.distance * 0.5  # adjust for height of chars
-        return np.column_stack((px, py)).astype(np.int32)
+        return np.column_stack((px, py)).astype(int)
 
     # computes the normal of a face
     def compute_all_normals(self):
@@ -119,8 +119,10 @@ class Renderer:
             [np.mean(self.model.points[face], axis=0) for face in faces])
         # Compute distances from camera to each centroid
         distances = np.linalg.norm(self.camera_pos - centroids, axis=1)
-        # Get sorted indices (furthest to closest)
-        sorted_indices = np.argsort(-distances)
+        # Get sorted indices (cloest to farthest)
+        # I dont understand why it has a to positive, it should be negative
+        sorted_indices = np.argsort(distances)
+        # but if is negative it will be print the faces wrong?
         # Return faces indices in sorted order
         return sorted_indices
         # return np.array([faces[i] for i in sorted_indices])
