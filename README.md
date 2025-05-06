@@ -1,4 +1,4 @@
-# x2ascii
+# 3D Model and Image to ASCII Art Converter
 
 x2ascii is a Python project that converts 3D models (OBJ files) and images into ASCII art. It includes tools for rendering 3D objects as ASCII in the terminal and converting images into ASCII text files.
 
