@@ -70,6 +70,7 @@ class Renderer:
             np.linalg.norm(light_vectors, axis=1, keepdims=True)
         # dot product means that 1 = same direction, 0 = 90 degrees to each other and -1 is opposite direction
         # changed with 1 minus to have black bg for ascii
+        # Computes dot product between light vectors and normals
         dot_product = np.einsum('ij,ij->i', light_vectors, computed_normals)
         intensities = 1 - np.maximum(0.1, dot_product)
         return intensities
@@ -79,15 +80,11 @@ class Renderer:
 
     def drawface(self, face, intensity, projected_points):
 
-        facepoints = []
-        for i in range(len(face)):
-            px, py = projected_points[face[i]]
-            # creates an array of points for that face
-            facepoints.append((px, py))
-
+        facepoints = projected_points[face]
+        # Convert to int32 for OpenCV
+        facepoints = np.array([facepoints], dtype=np.int32)
         colour_value = int(intensity * 255)  # 255 = white, 0 = black
-        facepoints = np.array(facepoints, dtype=np.int32)
-        cv2.fillPoly(self.grid, [facepoints], color=colour_value)
+        cv2.fillPoly(self.grid, facepoints, color=colour_value)
 
     def calculate_edge(self, face, projected_points):
         # need to add option for drawing edges
@@ -115,8 +112,7 @@ class Renderer:
 
     def sort_faces_by_distance(self, faces):
         # Compute centroids for all faces
-        centroids = np.array(
-            [np.mean(self.model.points[face], axis=0) for face in faces])
+        centroids = np.mean(self.model.points[faces], axis=1)
         # Compute distances from camera to each centroid
         distances = np.linalg.norm(self.camera_pos - centroids, axis=1)
         # Get sorted indices (cloest to farthest)
