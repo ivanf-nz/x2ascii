@@ -44,8 +44,8 @@ def main():
     if not (args.flip):
         model.apply_rotation_z(np.radians(180))
 
-    model.apply_rotation_y(np.radians(45))
     model.apply_rotation_x(np.radians(45))
+    model.apply_rotation_y(np.radians(45))
 
     # Create the renderer with the specified width and height
     renderer = Renderer(model, args.width, args.height,
