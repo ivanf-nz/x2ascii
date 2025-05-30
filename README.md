@@ -107,4 +107,3 @@ x2ascii/
 -   Add more command-line options to `image_to_ascii.py` (like character sets).
 -   Implement camera controls (rotation, zoom, panning) instead of just rotating the object. (might not be possible due to being in the terminal)
 -   Add unit tests to ensure calculations (projection, lighting, rotation) are performed correctly.
--   Explore removing the OpenCV dependency for a pure NumPy/Python rasterizer (potentially slower).
